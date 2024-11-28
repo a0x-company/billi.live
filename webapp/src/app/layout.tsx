@@ -1,13 +1,12 @@
+import Navbar from "@/components/navbar";
+import { config } from "@/config";
+import ContextProvider from "@/context";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import "./globals.css";
-import Navbar from "@/components/navbar";
 import { headers } from "next/headers";
-import ContextProvider from "@/context";
 import { cookieToInitialState } from "wagmi";
-import { config } from "@/config";
-import { getSession, SessionProvider } from "next-auth/react";
-import { Session } from "next-auth";
+import "./globals.css";
+import { getSession } from "@/utils/sessions";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,22 +29,19 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // const session = await getSession();
-
   const headersList = await headers();
   const cookies = headersList.get("cookie");
   const initialState = cookieToInitialState(config, cookies);
+  const session = await getSession();
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* <SessionProvider session={session}> */}
-        <ContextProvider initialState={initialState}>
+        <ContextProvider initialState={initialState} session={session}>
           <Navbar />
           {children}
         </ContextProvider>
-        {/* </SessionProvider> */}
       </body>
     </html>
   );
