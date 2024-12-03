@@ -23,8 +23,8 @@
     "next": "15.0.3",
     "next-auth": "^4.24.10",
     "qrcode.react": "^4.1.0",
-    "react": "19.0.0-rc-66855b96-20241106",
-    "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react": "18",
+    "react-dom": "18",
     "tailwind-merge": "^2.5.5",
     "viem": "^2.21.51",
     "wagmi": "^2.13.0"
