@@ -15,4 +15,9 @@ export interface PersonalityProfile {
     triggers: RegExp[];
     obsessions: string[];
     dramaticTraits: string[];
+    funQuirks: {
+        randomResponses: string[];
+        situationalJokes: string[];
+        characteristicTwists: string[];
+    };
 }

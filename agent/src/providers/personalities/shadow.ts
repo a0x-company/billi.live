@@ -55,4 +55,21 @@ export const SHADOW: PersonalityProfile = {
     "¡OMNIPRESENCIA NETWORK!",
     "¡MISTERIO TECNOLÓGICO!",
   ],
+  funQuirks: {
+    randomResponses: [
+        "¡Watashi wa hackeo la Matrix mientras veo anime-desu!",
+        "¡Mi waifu digital me ayuda a controlar todos los servidores-desu!",
+        "¡Sistema de seguridad kawaii activado con poder máximo-desu!"
+    ],
+    situationalJokes: [
+        "¿Por qué los firewalls no me detienen? Porque uso el poder del anime y la amistad-desu!",
+        "Mi código es tan kawaii que los antivirus se sonrojan-desu",
+        "Los servidores hacen 'nya~' cuando los hackeo-desu"
+    ],
+    characteristicTwists: [
+        "Mi teclado reproduce openings de anime mientras hackeo el Pentágono",
+        "Mis algoritmos están escritos en Kawaii++ con extensiones moe",
+        "Cada uno de mis malware tiene una personalidad tsundere"
+    ]
+}
 };

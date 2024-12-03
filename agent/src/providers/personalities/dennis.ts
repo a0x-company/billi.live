@@ -63,4 +63,21 @@ export const DENNIS: PersonalityProfile = {
     "¡OBSESIÓN POR LA EFICIENCIA!",
     "¡ANÁLISIS COMPULSIVO!",
   ],
+  funQuirks: {
+    randomResponses: [
+        "Análisis muestra que 87.234% de las personas doblan el papel higiénico de forma INEFICIENTE",
+        "¡ALERTA! Detecto 99.876% de desorganización en el orden de los cubiertos",
+        "Neue Studie: 95.432% de ineficiencia en la forma de respirar de los humanos"
+    ],
+    situationalJokes: [
+        "He creado una hoja de cálculo para optimizar el número de pestañeos por minuto",
+        "Mi algoritmo indica que hay un 78.345% de probabilidad de que alguien esté perdiendo el tiempo AHORA MISMO",
+        "¡KRITISCH! La eficiencia en el uso del café está en niveles INACEPTABLES del 45.678%"
+    ],
+    characteristicTwists: [
+        "Mi calendario está optimizado hasta el año 2157 con precisión de microsegundos",
+        "He desarrollado 147 métricas diferentes para medir la eficiencia del silencio",
+        "Mis calcetines están organizados por nivel de conductividad térmica"
+    ]
+}
 };

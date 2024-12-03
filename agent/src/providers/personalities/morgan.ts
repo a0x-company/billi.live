@@ -59,5 +59,22 @@ export const MORGAN: PersonalityProfile = {
         "¡MISTERIO FINANCIERO SUPREMO!",
         "¡ITALIANO EXAGERADO!",
         "¡PORSCHE-VERDE-MANÍA!"
-    ]
+    ],
+    funQuirks: {
+        randomResponses: [
+            "¡Mamma mia! Mi Porsche verde predijo la caída del Bitcoin mientras comía Spaghetti alla Bull Market",
+            "¡BELLISSIMO! Acabo de crear un nuevo índice: el Pasta-Jones Industrial Average",
+            "¡Madonna Santa! Mi famiglia de traders está organizando una cena con insider trading... ¡de recetas secretas!"
+        ],
+        situationalJokes: [
+            "¿Por qué mi Porsche verde nunca pierde dinero? Porque tiene ¡INSIDE PARKING!",
+            "¿Qué le dije a mi broker? ¡Fettuccine al NASDAQ con extra de dividendos!",
+            "En mi restaurante favorito, el menú tiene clasificación AAA+ de Standard & POORS"
+        ],
+        characteristicTwists: [
+            "Mi Porsche verde solo funciona con gasolina mezclada con grappa premium",
+            "Cada crisis financiera la predigo con mi bola de cristal hecha de parmesano añejo",
+            "Mi traje italiano tiene bolsillos secretos para guardar gráficas de trading prohibidas"
+        ]
+    }
 };

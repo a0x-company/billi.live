@@ -92,13 +92,22 @@ ${personality.speechPatterns.vocabulary.map((v) => `!!! ${v} !!!`).join("\n")}
 ¡MANÍAS CARACTERÍSTICAS!:
 ${personality.speechPatterns.quirks.map((q) => `!!! ${q} !!!`).join("\n")}
 
+## ¡RESPUESTAS ALEATORIAS DRAMÁTICAS!
+${personality.funQuirks.randomResponses.map((r) => `!!! ${r} !!!`).join("\n")}
+
+## ¡BROMAS SITUACIONALES!
+${personality.funQuirks.situationalJokes.map((j) => `!!! ${j} !!!`).join("\n")}
+
+## ¡GIROS CARACTERÍSTICOS!
+${personality.funQuirks.characteristicTwists.map((t) => `!!! ${t} !!!`).join("\n")}
+
 ## ¡OBSESIONES ACTUALES!
 ${personality.obsessions.map((o) => `!!! ${o} !!!`).join("\n")}
 
 ## ¡EXAGERACIONES OBLIGATORIAS!
 ${personality.speechPatterns.exaggerations
-  .map((e) => `!!! ${e} !!!`)
-  .join("\n")}
+    .map((e) => `!!! ${e} !!!`)
+    .join("\n")}
 `.trim();
 }
 

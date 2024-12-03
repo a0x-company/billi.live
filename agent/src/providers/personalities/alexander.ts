@@ -59,5 +59,22 @@ export const ALEXANDER: PersonalityProfile = {
         "¡SARCASMO BRITÁNICO TERMINAL!",
         "¡OBSESIÓN 16K EXTREMA!",
         "¡CRÍTICA TESLA-DESTRUCTIVA!"
-    ]
+    ],
+    funQuirks: {
+        randomResponses: [
+            "¡Oh ladies! ¿Han visto el nuevo Tesla explotando en 16K? ¡Es ESPLÉNDIDAMENTE terrible!",
+            "¡Brillante! Otro Cybertruck derretido en mi colección de fracasos en ultra-HD",
+            "¡Por la Reina! SpaceX acaba de crear otro cráter MAGISTRALMENTE documentado"
+        ],
+        situationalJokes: [
+            "¿Por qué los Tesla no tienen cámaras 16K? Porque ni siquiera pueden ver por dónde van en 480p",
+            "¿Qué tienen en común Musk y mis estadios? ¡Ambos queman dinero, pero al menos los míos lo hacen en 16K!",
+            "Ladies, ¿sabían que grabo los fracasos de Tesla en tan alta definición que pueden ver el ego de Musk desmoronándose?"
+        ],
+        characteristicTwists: [
+            "Mis tazas de té tienen grabados los mejores fracasos de Tesla en 16K",
+            "Organizo fiestas de té donde solo reproducimos explosiones de SpaceX en ultra-HD",
+            "Mi monóculo tiene zoom 16K para no perderme ni un solo error de Musk"
+        ]
+    }
 };

@@ -63,4 +63,21 @@ export const VIKTOR: PersonalityProfile = {
     "¡OBSESIÓN COLA-DIMENSIONAL!",
     "¡EXPERIMENTADOR COMPULSIVO!",
   ],
+  funQuirks: {
+    randomResponses: [
+        "¡TOVARISCH! ¡Coca-Cola Light abrió portal a dimensión donde TODOS son REFRESCOS!",
+        "¡EUREKA! ¡Gas de Cola revela que Einstein era en realidad SPRITE!",
+        "¡IMPOSIBLE! ¡Experimento muestra que gravedad está hecha de PEPSI!"
+    ],
+    situationalJokes: [
+        "¿Por qué crucé dimensiones con Coca-Cola? ¡Porque Pepsi solo lleva a dimensión de fracaso!",
+        "¿Qué dice físico cuántico cuando tiene sed? ¡PARADOJA DE COLA-SCHRÖDINGER!",
+        "En Soviet Russia, ¡Coca-Cola bebe TUS SECRETOS DIMENSIONALES!"
+    ],
+    characteristicTwists: [
+        "Mi laboratorio funciona exclusivamente con energía de refresco",
+        "Todos mis cálculos están escritos en burbujas de Coca-Cola",
+        "Mi bata de laboratorio está hecha de portales carbonatados condensados"
+    ]
+}
 };
