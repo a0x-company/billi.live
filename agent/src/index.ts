@@ -37,6 +37,7 @@ import timeProvider from "./providers/timeProvider.ts";
 import customProvider from "./providers/customProvider.ts";
 import insultsProvider from "./providers/insultsProvider.ts";
 import transferTokensAction from "./custom_actions/transferTokens.ts";
+import fireAttacsProvider from "./providers/fireAttacsProvider.ts";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -226,8 +227,11 @@ export function createAgent(
       nodePlugin,
       character.settings.secrets?.WALLET_PUBLIC_KEY ? solanaPlugin : null,
     ].filter(Boolean),
-    providers: [timeProvider, customProvider, insultsProvider],
-    actions: [transferTokensAction],
+    // providers: [timeProvider, customProvider, insultsProvider],
+    // providers: [timeProvider, fireAttacsProvider],
+    providers: [timeProvider],
+    // actions: [transferTokensAction],
+    actions: [],
     services: [],
     managers: [],
     cacheManager: cache,
