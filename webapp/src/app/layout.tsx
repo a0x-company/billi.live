@@ -39,8 +39,10 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ContextProvider initialState={initialState} session={session}>
-          <Navbar />
-          {children}
+          <div className="min-h-screen bg-gray-900 transition-colors">
+            <Navbar />
+            <main className="max-w-[1440px] mx-auto">{children}</main>
+          </div>
         </ContextProvider>
       </body>
     </html>

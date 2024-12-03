@@ -12,8 +12,8 @@ export interface FarcasterUser {
 }
 
 interface FarcasterUserContextProps {
-  farcasterUser: FarcasterUser;
-  setFarcasterUser: (user: FarcasterUser) => void;
+  farcasterUser: FarcasterUser | null;
+  setFarcasterUser: (user: FarcasterUser | null) => void;
   isConnected: boolean;
   setIsConnected: (connected: boolean) => void;
 }
@@ -37,7 +37,7 @@ export const FarcasterUserProvider = ({
 }: {
   children: ReactNode;
 }) => {
-  const [farcasterUser, setFarcasterUser] = useState<FarcasterUser>(
+  const [farcasterUser, setFarcasterUser] = useState<FarcasterUser | null>(
     defaultContext.farcasterUser
   );
   const [isConnected, setIsConnected] = useState<boolean>(

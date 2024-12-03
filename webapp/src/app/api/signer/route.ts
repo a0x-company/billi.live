@@ -1,12 +1,23 @@
 import { getSignedKey } from "@/lib/getSignedKey";
 import { NextResponse } from "next/server";
 import neynarClient from "@/lib/neynarClient";
+import { saveUser } from "@/supabase/action/saveUser";
 
-export async function POST() {
+export async function POST(request: Request) {
   console.log("[POST][api/signer]");
+  const { user } = await request.json();
   try {
     const signedKey = await getSignedKey();
     console.log("signedKey: ", signedKey);
+    const userWithSignedKey = {
+      ...user,
+      signer_uuid: signedKey.signer_uuid,
+      public_key: signedKey.public_key,
+      status: signedKey.status,
+      signer_approval_url: signedKey.signer_approval_url,
+    };
+    console.log("userWithSignedKey: ", userWithSignedKey);
+    await saveUser(userWithSignedKey);
 
     return NextResponse.json(signedKey, {
       status: 200,

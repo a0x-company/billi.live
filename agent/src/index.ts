@@ -37,7 +37,7 @@ import timeProvider from "./providers/timeProvider.ts";
 import customProvider from "./providers/customProvider.ts";
 import insultsProvider from "./providers/insultsProvider.ts";
 import transferTokensAction from "./custom_actions/transferTokens.ts";
-import fireAttacsProvider from "./providers/fireAttacsProvider.ts";
+import evmPlugin from "./plugin-evm/src/index.ts";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -205,6 +205,10 @@ export async function initializeClients(
   return clients;
 }
 
+function getSecret(character: Character, secret: string) {
+  return character.settings.secrets?.[secret] || process.env[secret];
+}
+
 export function createAgent(
   character: Character,
   db: IDatabaseAdapter,
@@ -225,13 +229,14 @@ export function createAgent(
     plugins: [
       bootstrapPlugin,
       nodePlugin,
-      character.settings.secrets?.WALLET_PUBLIC_KEY ? solanaPlugin : null,
+      getSecret(character, "EVM_PRIVATE_KEY") ||
+      (getSecret(character, "WALLET_PUBLIC_KEY") &&
+        !getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))
+        ? evmPlugin
+        : null,
     ].filter(Boolean),
-    // providers: [timeProvider, customProvider, insultsProvider],
-    // providers: [timeProvider, fireAttacsProvider],
-    providers: [timeProvider],
-    // actions: [transferTokensAction],
-    actions: [],
+    providers: [timeProvider, insultsProvider],
+    actions: [transferTokensAction],
     services: [],
     managers: [],
     cacheManager: cache,
