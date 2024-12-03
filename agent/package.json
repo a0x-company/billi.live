@@ -23,10 +23,13 @@
     "@ai16z/plugin-node": "0.1.4-alpha.3",
     "@ai16z/plugin-solana": "0.1.4-alpha.3",
     "@ai16z/plugin-starknet": "latest",
+    "@lifi/sdk": "^3.4.1",
+    "@lifi/types": "^16.3.0",
     "better-sqlite3": "^11.5.0",
     "ethers": "^6.13.4",
     "moralis": "^2.27.2",
     "readline": "^1.3.0",
+    "viem": "^2.21.53",
     "ws": "^8.18.0",
     "yargs": "17.7.2"
   },
