@@ -1,0 +1,12 @@
+.env
+.env-test
+dist
+coverage
+node_modules
+build
+.DS_Store
+service-account.json
+Zurf
+get-docker.sh
+/.vscode
+key.json
