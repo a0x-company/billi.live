@@ -34,9 +34,8 @@ import { fileURLToPath } from "url";
 import { character } from "./character.ts";
 import type { DirectClient } from "@ai16z/client-direct";
 import timeProvider from "./providers/timeProvider.ts";
-import customProvider from "./providers/customProvider.ts";
-import insultsProvider from "./providers/insultsProvider.ts";
-import transferTokensAction from "./custom_actions/transferTokens.ts";
+import { factEvaluator} from "./evaluators/glass/evaluator.ts";
+import personalityProvider from "./providers/personalityProvider.ts";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -219,15 +218,15 @@ export function createAgent(
     databaseAdapter: db,
     token,
     modelProvider: character.modelProvider,
-    evaluators: [],
+    evaluators: [factEvaluator],
     character,
     plugins: [
       bootstrapPlugin,
       nodePlugin,
       character.settings.secrets?.WALLET_PUBLIC_KEY ? solanaPlugin : null,
     ].filter(Boolean),
-    providers: [timeProvider, customProvider, insultsProvider],
-    actions: [transferTokensAction],
+    providers: [timeProvider, personalityProvider],
+    actions: [],
     services: [],
     managers: [],
     cacheManager: cache,
