@@ -11,36 +11,16 @@
     "baseUrl": ".",
     "skipLibCheck": true,
     "sourceMap": true,
-    "lib": [
-      "es6"
-    ],
+    "lib": ["es6"],
     "noImplicitAny": false,
     "paths": {
-      "@root": [
-        "./src"
-      ],
-      "@internal": [
-        "./src/internal"
-      ],
-      "@internal/*": [
-        "./src/internal/*"
-      ],
-      "@pkg": [
-        "./src/pkg"
-      ],
-      "@pkg/*": [
-        "./src/pkg/*"
-      ]
+      "@root": ["./src"],
+      "@internal": ["./src/internal"],
+      "@internal/*": ["./src/internal/*"],
+      "@pkg": ["./src/pkg"],
+      "@pkg/*": ["./src/pkg/*"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.gql",
-    "jest.config.js"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "coverage"
-  ]
+  "include": ["src/**/*.ts", "src/**/*.gql", "jest.config.js"],
+  "exclude": ["node_modules", "dist", "coverage"]
 }
