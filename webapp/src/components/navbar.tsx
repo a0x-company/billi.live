@@ -31,7 +31,6 @@ const styleLink =
   "cursor-pointer bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-md transition-all duration-300 flex items-center justify-center";
 
 const Navbar = () => {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const farcasterContext = useContext(FarcasterUserContext);
   const { farcasterUser, setFarcasterUser, isConnected, setIsConnected } =
     farcasterContext;
@@ -57,8 +56,8 @@ const Navbar = () => {
   );
 
   const handleSuccess = useCallback(
-    (res: StatusAPIResponse) => {
-      signIn("credentials", {
+    async (res: StatusAPIResponse) => {
+      await signIn("credentials", {
         message: res.message,
         signature: res.signature,
         name: res.username,
@@ -71,10 +70,14 @@ const Navbar = () => {
         ...farcasterUser,
         name: res.username,
         pfpUrl: res.pfpUrl,
+        fid: res.fid,
+        displayName: res.displayName,
       });
-      createAndStoreSigner({
+      await createAndStoreSigner({
         name: res.username,
         pfpUrl: res.pfpUrl,
+        fid: res.fid,
+        displayName: res.displayName,
       });
     },
     [setIsConnected, createAndStoreSigner, farcasterUser, setFarcasterUser]

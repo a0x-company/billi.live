@@ -38,6 +38,8 @@ import customProvider from "./providers/customProvider.ts";
 import insultsProvider from "./providers/insultsProvider.ts";
 import transferTokensAction from "./custom_actions/transferTokens.ts";
 import evmPlugin from "./plugin-evm/src/index.ts";
+import { boredomProvider } from "./providers/boredom.ts";
+import { livestreamGeneration } from "./custom_actions/livestream.ts";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -236,7 +238,7 @@ export function createAgent(
         : null,
     ].filter(Boolean),
     providers: [timeProvider, insultsProvider],
-    actions: [transferTokensAction],
+    actions: [transferTokensAction, livestreamGeneration],
     services: [],
     managers: [],
     cacheManager: cache,

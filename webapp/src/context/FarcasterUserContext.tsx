@@ -9,6 +9,7 @@ export interface FarcasterUser {
   fid?: number;
   pfpUrl?: string;
   name?: string;
+  displayName?: string;
 }
 
 interface FarcasterUserContextProps {
