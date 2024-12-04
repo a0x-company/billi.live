@@ -1,6 +1,7 @@
 import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { createAppClient, viemConnector } from "@farcaster/auth-client";
+// import { adminAuth } from "@/firebase/firebase-admin";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -47,10 +48,18 @@ export const authOptions: AuthOptions = {
           });
           const { success, fid } = verifyResponse;
           if (!success) return null;
+          // const customToken = await adminAuth.createCustomToken(
+          //   fid.toString(),
+          //   {
+          //     role: "user",
+          //   }
+          // );
+          // console.log("customToken", customToken);
           return {
             id: fid.toString(),
             name: credentials.name,
             image: credentials.pfp,
+            // customToken,
           };
         } catch (error) {
           console.log("error", error);

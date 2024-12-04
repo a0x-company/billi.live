@@ -1,7 +1,14 @@
 "use client";
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Send } from "lucide-react";
 import { format } from "date-fns";
+import {
+  FarcasterUser,
+  FarcasterUserContext,
+  LOCAL_STORAGE_KEYS,
+} from "@/context/FarcasterUserContext";
+import { QRCode } from "@farcaster/auth-kit";
+import axios from "axios";
 
 interface ChatMessage {
   id: string;
@@ -11,6 +18,12 @@ interface ChatMessage {
 }
 
 export const ChatBox: React.FC = () => {
+  const farcasterContext = useContext(FarcasterUserContext);
+  const { farcasterUser, setFarcasterUser, isConnected, setIsConnected } =
+    farcasterContext;
+
+  const [isSignerWriter, setIsSignerWriter] = useState(false);
+  const [openQrSigner, setOpenQrSigner] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "1",
@@ -27,7 +40,17 @@ export const ChatBox: React.FC = () => {
   ]);
   const [newMessage, setNewMessage] = useState("");
 
+  useEffect(() => {
+    if (farcasterUser?.fid && farcasterUser.status === "approved") {
+      setIsSignerWriter(true);
+    }
+  }, [farcasterUser]);
+
   const handleSendMessage = () => {
+    if (!isSignerWriter) {
+      setOpenQrSigner(true);
+      return;
+    }
     if (!newMessage.trim()) return;
 
     const message: ChatMessage = {
@@ -41,12 +64,89 @@ export const ChatBox: React.FC = () => {
     setNewMessage("");
   };
 
+  /* GET SIGNER STATUS */
+  useEffect(() => {
+    if (
+      farcasterUser &&
+      farcasterUser.status === "pending_approval" &&
+      openQrSigner
+    ) {
+      let intervalId: NodeJS.Timeout;
+
+      const startPolling = () => {
+        intervalId = setInterval(async () => {
+          try {
+            const response = await axios.get(
+              `/api/signer?signer_uuid=${farcasterUser?.signer_uuid}`
+            );
+            const user = response.data as FarcasterUser;
+
+            if (user?.status === "approved") {
+              // store the user in local storage
+              localStorage.setItem(
+                LOCAL_STORAGE_KEYS.FARCASTER_USER,
+                JSON.stringify(user)
+              );
+              setFarcasterUser(user);
+              setIsSignerWriter(true);
+              setOpenQrSigner(false);
+              const updateUser = async () => {
+                await axios.put(
+                  `/api/signer?signer_uuid=${farcasterUser?.signer_uuid}`,
+                  user
+                );
+              };
+              updateUser();
+              clearInterval(intervalId);
+            }
+          } catch (error) {
+            console.error("Error during polling", error);
+          }
+        }, 2000);
+      };
+
+      const stopPolling = () => {
+        clearInterval(intervalId);
+      };
+
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          stopPolling();
+        } else {
+          startPolling();
+        }
+      };
+
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      // Start the polling when the effect runs.
+      startPolling();
+
+      // Cleanup function to remove the event listener and clear interval.
+      return () => {
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
+        clearInterval(intervalId);
+      };
+    }
+  }, [farcasterUser, openQrSigner]);
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col h-full">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md flex flex-col h-full relative">
       <div className="p-4 border-b dark:border-gray-700">
         <h3 className="font-semibold dark:text-white">Live Chat</h3>
       </div>
 
+      {openQrSigner && farcasterUser?.signer_approval_url && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center h-full bg-black/50 backdrop-blur-sm gap-4">
+          <h1>Scan the QR code to participate on the chat</h1>
+          <div className="w-max h-max flex items-center justify-center bg-white rounded-lg px-4 pt-4 pb-2">
+            <QRCode uri={farcasterUser?.signer_approval_url} />
+          </div>
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
           <div key={msg.id} className="flex flex-col">

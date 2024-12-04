@@ -173,13 +173,10 @@ export const evmWalletProvider: Provider = {
     if (!runtime.getSetting("EVM_PRIVATE_KEY")) {
       return null;
     }
-    console.log("runtime", runtime.getSetting("EVM_PRIVATE_KEY"));
     try {
       const walletProvider = new WalletProvider(runtime);
       const address = walletProvider.getAddress();
       const balance = await walletProvider.getWalletBalance();
-      console.log("EVM Wallet Address:", address);
-      console.log("EVM Wallet Balance:", balance);
       return `EVM Wallet Address: ${address}\nBalance: ${balance} ETH`;
     } catch (error) {
       console.error("Error in EVM wallet provider:", error);
