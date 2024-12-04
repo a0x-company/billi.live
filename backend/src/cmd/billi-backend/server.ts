@@ -1,5 +1,5 @@
 // dependencies
-import { http } from "../../internal/index";
+import { internal } from "../../internal/index";
 
 // envs
 const { NODE_ENV } = process.env;
@@ -8,7 +8,7 @@ if (!NODE_ENV || !NODE_ENV.length) {
 }
 
 // http
-const { app, server } = http.http.createServer();
-http.livestreamsRoutes(app, {});
+const { app, server } = internal.http.createServer();
+internal.livestreamsRoutes(app, {});
 
 export default server;

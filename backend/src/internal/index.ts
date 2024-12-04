@@ -1,1 +1,1 @@
-export * as http from "./http";
+export * as internal from "./http";
