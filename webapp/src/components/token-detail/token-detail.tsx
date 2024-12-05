@@ -35,8 +35,6 @@ const TokenDetail = () => {
 
   const { address } = useParams();
 
-  const socketUrl = "http://localhost:8080";
-
   const [userCount, setUserCount] = useState(0);
   const [users, setUsers] = useState<string[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -56,10 +54,10 @@ const TokenDetail = () => {
     if (socketRef.current) {
       socketRef.current.on("connect", () => {
         if (socketRef.current) {
-          console.log("Joining stream with streamId: ", 1);
+          console.log("Joining stream with streamId: ", address);
 
           socketRef.current.emit("joinStream", {
-            streamId: 1,
+            streamId: address,
             handle: "handle",
           });
         }
