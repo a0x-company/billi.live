@@ -8,6 +8,9 @@ import { LivestreamStorage } from "./storage";
 // types
 import { CreateLivestreamLivepeerResponse, Livestream, StreamInfo } from "./types";
 
+// internal
+import { connectedUsers } from "./sharedState";
+
 interface LivestreamManager {
   saveLivestream(
     handle: string,
@@ -17,6 +20,7 @@ interface LivestreamManager {
   ): Promise<void>;
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
+  getLives(): Promise<Livestream[]>;
 }
 
 interface LivepeerManager {
@@ -69,5 +73,16 @@ export class LivestreamService {
 
   public async getLastLivestreamForHandle(handle: string): Promise<Livestream | null> {
     return await this.livestreamStorage.getLastLivestreamForHandle(handle);
+  }
+
+  public async getLivesForLanding() {
+    const streams = await this.livestreamStorage.getLives();
+
+    const streamsWithUserCount = streams.map((stream) => ({
+      ...stream,
+      userCount: connectedUsers[stream.livepeerInfo.streamId]?.length || 0,
+    }));
+
+    return streamsWithUserCount;
   }
 }

@@ -120,4 +120,31 @@ export class LivestreamStorage {
       throw new Error(err instanceof Error ? err.message : "unknow error");
     }
   }
+
+  public async getLives(): Promise<Livestream[]> {
+    try {
+      const querySnapshot = await this.firestore
+        .collection(this.LIVES_COLLECTION)
+        .where("status", "==", "live")
+        .get();
+
+      const lives = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+
+        return {
+          handle: data.handle,
+          title: data.title,
+          livepeerInfo: data.livepeerInfo,
+          createdAt: data.createdAt,
+          castInFarcaster: data.castInFarcaster,
+          status: data.status,
+        };
+      });
+
+      return lives;
+    } catch (err: any) {
+      console.log(err instanceof Error ? err.message : "unknow error");
+      throw new Error(err instanceof Error ? err.message : "unknow error");
+    }
+  }
 }
