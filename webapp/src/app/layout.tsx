@@ -48,7 +48,8 @@ export default async function RootLayout({
       >
         <ContextProvider session={session}>
           <div className="min-h-screen bg-gray-900 transition-colors">
-            <Navbar />
+            {/* <Navbar /> */}
+
             <main className="max-w-[1440px] mx-auto">{children}</main>
           </div>
         </ContextProvider>
