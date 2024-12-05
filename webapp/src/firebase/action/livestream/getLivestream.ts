@@ -25,8 +25,10 @@ export const getLivestream = async (
   by: "tokenAddress" | "fid" | "username"
 ) => {
   console.log("[getLivestream] id", id, "by", by);
-  const q = query(livestreamDataCollection, where(by, "==", `${id}`));
+  const q = query(livestreamDataCollection, where(by, "==", id));
+  console.log("[getLivestream] q", q);
   const snapshot = await getDocs(q);
+  console.log("[getLivestream] snapshot", snapshot);
   if (snapshot.empty) {
     console.log("[getLivestream] snapshot is empty");
     return null;
