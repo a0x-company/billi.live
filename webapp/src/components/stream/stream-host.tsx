@@ -1,8 +1,13 @@
+"use client";
+// react
 import { useState } from "react";
+// components
 import { StreamModal } from "./stream-modal";
-import { Plus } from "lucide-react";
-import { Livestream } from "@/firebase/action/livestream/getLivestream";
 import BrowserBroadcast from "../livepeer/browser-broadcast";
+// icons
+import { Plus } from "lucide-react";
+// types
+import { Livestream } from "@/types";
 
 export type StatusStream = "idle" | "streaming";
 export type TypeStream = "obs" | "browser" | null;
@@ -40,7 +45,7 @@ const StreamHost = ({ stream }: { stream: Livestream }) => {
       )}
       {streamHost.status === "idle" && (
         <p className="w-full h-full flex items-center justify-center text-white">
-          Livestream is waiting for start
+          Livestream is waiting to begin
         </p>
       )}
       {streamHost.status === "streaming" &&

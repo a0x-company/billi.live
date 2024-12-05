@@ -5,7 +5,6 @@ import { useContext, useEffect, useRef, useState } from "react";
 
 // next
 import Link from "next/link";
-import { useParams } from "next/navigation";
 
 // socket
 import io, { Socket } from "socket.io-client";
@@ -17,36 +16,21 @@ import { useQuery } from "@tanstack/react-query";
 import { FarcasterUserContext } from "@/context/FarcasterUserContext";
 
 // firebase
-import { Livestream } from "@/firebase/action/livestream/getLivestream";
 
 // components
-import { ChatBox } from "../stream/chat-box";
-import Chart from "./chart";
-import { TokenTrade } from "./token-trade";
 import { LoadingSpinner } from "../spinner";
+import { ChatBox } from "../stream/chat-box";
 import StreamHost from "../stream/stream-host";
 import StreamViewer from "../stream/stream-viewer";
+import Chart from "./chart";
+import { TokenTrade } from "./token-trade";
 
 // icons
 import { Heart } from "lucide-react";
 
 // constants
 import { STREAMING_COUNTER_SERVER_URL } from "@/constants/stream";
-
-const stream = {
-  title: "Stream Title",
-  viewerCount: 100,
-  streamerName: "Streamer Name",
-  description: "Stream Description",
-  createdByUsername: "Streamer Username",
-};
-
-export type StreamResponse = Livestream | LivestreamError;
-export enum LivestreamError {
-  LIVESTREAM_NOT_FOUND = "Livestream not found",
-  UNKNOWN_ERROR = "An unknown error occurred",
-  ADDRESS_REQUIRED = "address is required",
-}
+import { Comment, Livestream, LivestreamError } from "@/types";
 
 const socketUrl = STREAMING_COUNTER_SERVER_URL;
 
@@ -69,16 +53,15 @@ const getLiveStremingByTokenAddress = async (
   }
 };
 
-const TokenDetail = () => {
+const TokenDetail = ({ address }: { address: string }) => {
   const socketRef = useRef<Socket | null>(null);
-
-  const { address } = useParams();
-
   const [userCount, setUserCount] = useState(0);
   const [users, setUsers] = useState<string[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
+  const isConnectedRoom = useRef(false);
 
   useEffect(() => {
+    if (isConnectedRoom.current) return;
     console.log("Joining stream with streamId: ", address);
 
     socketRef.current = io(socketUrl, {
@@ -99,6 +82,7 @@ const TokenDetail = () => {
             streamId: address,
             handle: "handle",
           });
+          isConnectedRoom.current = true;
         }
       });
 
@@ -125,7 +109,7 @@ const TokenDetail = () => {
         socketRef.current.disconnect();
       }
     };
-  }, []);
+  }, [address]);
 
   const { farcasterUser } = useContext(FarcasterUserContext);
 
@@ -142,9 +126,7 @@ const TokenDetail = () => {
     refetchOnReconnect: false,
   });
 
-  const isStreamer =
-    stream?.createdByFID === farcasterUser?.fid &&
-    stream?.createdByUsername === farcasterUser?.name;
+  const isStreamer = stream?.handle === farcasterUser?.name;
 
   return (
     <div className="grid grid-cols-[320px_1fr] lg:grid-cols-[895px_1fr] gap-4 py-8">
@@ -195,14 +177,15 @@ const TokenDetail = () => {
               <p className="text-gray-200">{stream.description}</p>
               <div className="flex items-center gap-4 mb-4">
                 <span className="text-rose-500 font-medium flex items-center gap-1">
-                  <Heart className="w-4 h-4" /> 0 viewers
+                  <Heart className="w-4 h-4" /> {userCount}{" "}
+                  {userCount === 1 ? "viewer" : "viewers"}
                 </span>
                 <Link
-                  href={`https://warpcast.com/${stream.createdByUsername}`}
+                  href={`https://warpcast.com/${stream.handle}`}
                   target="_blank"
                   className="text-gray-200"
                 >
-                  {stream.createdByUsername}
+                  {stream.handle}
                 </Link>
               </div>
 
@@ -223,7 +206,12 @@ const TokenDetail = () => {
       </div>
 
       <div className="grid grid-cols-1 grid-rows-[655px_1fr] gap-4">
-        <ChatBox />
+        <ChatBox
+          comments={comments}
+          setComments={setComments}
+          isConnectedRoom={isConnectedRoom}
+          socketRef={socketRef}
+        />
         <TokenTrade />
       </div>
     </div>

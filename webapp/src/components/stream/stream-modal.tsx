@@ -1,7 +1,14 @@
 "use client";
+// react
+import React, { useState } from "react";
 
-import { Livestream } from "@/firebase/action/livestream/getLivestream";
+// types
+import { Livestream } from "@/types";
+
+// utils
 import { cn } from "@/utils/tailwindcss";
+
+// icons
 import {
   Check,
   ExternalLink,
@@ -11,7 +18,8 @@ import {
   Video,
   X,
 } from "lucide-react";
-import React, { useState } from "react";
+
+// components
 import { StatusStream, StreamHostProps, TypeStream } from "./stream-host";
 
 interface StreamModalProps {
