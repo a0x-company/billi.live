@@ -7,14 +7,6 @@ import {
   State,
 } from "@ai16z/eliza";
 
-const shouldStartLivestreamTemplate = `
-Here is the link to start recording your stream. 
-{{livestreamHostUrl}}
-
-Here is the link to watch the livestream.
-{{livestreamViewerUrl}}
-`;
-
 const livestreamUrl = "https://billi-live.vercel.app";
 
 export const livestreamGeneration: Action = {
@@ -41,20 +33,13 @@ export const livestreamGeneration: Action = {
       return;
     }
 
-    const hostUrl = `${livestreamUrl}/livestream`;
-    const viewerUrl = `${livestreamUrl}/token/${tokenMatch[0]}`;
+    const hostUrl = `${livestreamUrl}/token/${tokenMatch[0]}`;
     const userId = runtime.agentId;
 
     elizaLogger.log("User ID:", userId);
     elizaLogger.log("Enlace de livestream generado:", livestreamUrl);
 
-    const templateExample = `
-    Te dejo el link para que puedas empezar a grabar tu stream. 
-    ${hostUrl}
-
-    Y este es el link para que puedas ver el stream en vivo.
-    ${viewerUrl}
-    `;
+    const templateExample = `Te dejo el link para que puedas empezar a grabar tu stream. ${hostUrl}`;
 
     callback(
       {
