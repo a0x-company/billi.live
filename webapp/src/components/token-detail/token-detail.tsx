@@ -1,18 +1,29 @@
 "use client";
+// next
+import Link from "next/link";
 
-import { LivestreamError } from "@/app/api/livestream/route";
-import { FarcasterUserContext } from "@/context/FarcasterUserContext";
-import { useQuery } from "@tanstack/react-query";
-import { Heart } from "lucide-react";
+// react
 import { useContext } from "react";
+
+// react-query
+import { useQuery } from "@tanstack/react-query";
+
+// icons
+import { Heart } from "lucide-react";
+
+// context
+import { FarcasterUserContext } from "@/context/FarcasterUserContext";
+
+// firebase
+import { Livestream } from "@/firebase/action/livestream/getLivestream";
+
+// components
 import { ChatBox } from "../stream/chat-box";
 import Chart from "./chart";
 import { TokenTrade } from "./token-trade";
 import { LoadingSpinner } from "../spinner";
-import { Livestream } from "@/firebase/action/livestream/getLivestream";
 import StreamHost from "../stream/stream-host";
 import StreamViewer from "../stream/stream-viewer";
-import Link from "next/link";
 
 const stream = {
   title: "Stream Title",
@@ -20,6 +31,13 @@ const stream = {
   streamerName: "Streamer Name",
   description: "Stream Description",
 };
+
+export type StreamResponse = Livestream | LivestreamError;
+export enum LivestreamError {
+  LIVESTREAM_NOT_FOUND = "Livestream not found",
+  UNKNOWN_ERROR = "An unknown error occurred",
+  ADDRESS_REQUIRED = "address is required",
+}
 
 const getLiveStremingByTokenAddress = async (
   address: string
