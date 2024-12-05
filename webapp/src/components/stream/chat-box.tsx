@@ -46,6 +46,18 @@ export const ChatBox: React.FC = () => {
     }
   }, [farcasterUser]);
 
+  const handleSendCast = async () => {
+    try {
+      const response = await axios.post("/api/cast", {
+        signer_uuid: farcasterUser?.signer_uuid,
+        text: newMessage.trim(),
+      });
+      console.log("response", response);
+    } catch (error) {
+      console.error("Error sending cast", error);
+    }
+  };
+
   const handleSendMessage = () => {
     if (!isSignerWriter) {
       setOpenQrSigner(true);
@@ -59,6 +71,8 @@ export const ChatBox: React.FC = () => {
       message: newMessage.trim(),
       timestamp: new Date(),
     };
+
+    handleSendCast();
 
     setMessages([...messages, message]);
     setNewMessage("");
@@ -138,6 +152,12 @@ export const ChatBox: React.FC = () => {
       <div className="p-4 border-b dark:border-gray-700">
         <h3 className="font-semibold dark:text-white">Live Chat</h3>
       </div>
+
+      {!isConnected && newMessage.trim().length > 1 && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center h-full bg-black/50 backdrop-blur-sm gap-4">
+          <h1>You are not connected to Farcaster 🔌</h1>
+        </div>
+      )}
 
       {openQrSigner && farcasterUser?.signer_approval_url && (
         <div className="absolute inset-0 flex flex-col items-center justify-center h-full bg-black/50 backdrop-blur-sm gap-4">

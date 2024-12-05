@@ -14,5 +14,6 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const userDataCollection = collection(db, "farcaster-users");
+const livestreamDataCollection = collection(db, "livestreams");
 
-export { db, userDataCollection, auth };
+export { db, userDataCollection, auth, livestreamDataCollection };
