@@ -153,6 +153,12 @@ export const ChatBox: React.FC = () => {
         <h3 className="font-semibold dark:text-white">Live Chat</h3>
       </div>
 
+      {!isConnected && newMessage.trim().length > 1 && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center h-full bg-black/50 backdrop-blur-sm gap-4">
+          <h1>You are not connected to Farcaster 🔌</h1>
+        </div>
+      )}
+
       {openQrSigner && farcasterUser?.signer_approval_url && (
         <div className="absolute inset-0 flex flex-col items-center justify-center h-full bg-black/50 backdrop-blur-sm gap-4">
           <h1>Scan the QR code to participate on the chat</h1>

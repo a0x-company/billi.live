@@ -95,7 +95,9 @@ const Navbar = () => {
       <ul className="flex gap-4 w-full py-4 max-w-[1440px] mx-auto items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Tv className="w-8 h-8 text-purple-600" />
-          <span className="text-xl font-bold text-white">Miracle.live</span>
+          <span className="text-xl font-bold text-white leading-none">
+            billi.live
+          </span>
         </Link>
         <li className={`${styleLink}`}>
           {isConnected && farcasterUser ? (

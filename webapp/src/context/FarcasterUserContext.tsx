@@ -48,10 +48,8 @@ export const FarcasterUserProvider = ({
 
   useEffect(() => {
     const storedData = localStorage.getItem(LOCAL_STORAGE_KEYS.FARCASTER_USER);
-    console.log("storedData", storedData);
     if (storedData) {
       const user: FarcasterUser = JSON.parse(storedData);
-      console.log("Usuario desde localStorage:", user);
       setFarcasterUser((prevUser) => ({ ...prevUser, ...user }));
       setIsConnected(true);
     }
@@ -66,8 +64,6 @@ export const FarcasterUserProvider = ({
       }));
     }
   }, [session, setFarcasterUser]);
-
-  console.log("farcasterUser", farcasterUser);
 
   return (
     <FarcasterUserContext.Provider
