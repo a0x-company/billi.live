@@ -124,6 +124,7 @@ export type WebhookStatusLivepeerBody = {
 export type Livestream = {
   //   email: string;
   title: string;
+  tokenAddress?: string;
   livepeerInfo: StreamInfo;
   createdAt: Date;
   status: string;

@@ -21,6 +21,7 @@ interface LivestreamManager {
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
   getLives(): Promise<Livestream[]>;
+  getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
 }
 
 interface LivepeerManager {
@@ -84,5 +85,9 @@ export class LivestreamService {
     }));
 
     return streamsWithUserCount;
+  }
+
+  public async getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null> {
+    return await this.livestreamStorage.getLivestreamByTokenAddress(tokenAddress);
   }
 }
