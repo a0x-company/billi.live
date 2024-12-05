@@ -29,6 +29,13 @@ export const getLivestream = async (
   console.log("[getLivestream] q", q);
   const snapshot = await getDocs(q);
   console.log("[getLivestream] snapshot", snapshot);
+
+  const allDocsSnapshot = await getDocs(livestreamDataCollection);
+  console.log(
+    "[getLivestream] all documents in collection",
+    allDocsSnapshot.docs.map((doc) => doc.data())
+  );
+
   if (snapshot.empty) {
     console.log("[getLivestream] snapshot is empty");
     return null;
