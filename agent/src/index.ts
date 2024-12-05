@@ -35,7 +35,8 @@ import { character } from "./character.ts";
 import type { DirectClient } from "@ai16z/client-direct";
 import timeProvider from "./providers/timeProvider.ts";
 import { factEvaluator} from "./evaluators/glass/evaluator.ts";
-import personalityProvider from "./providers/personalityProvider.ts";
+import postToFarcasterAction from "./custom_actions/postFarcaster.ts";
+import NeynarClientInterface from "./clients/neynar-client.ts";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -190,6 +191,11 @@ export async function initializeClients(
     clients.push(twitterClients);
   }
 
+  if (clientTypes.includes("farcaster")) {
+    const farcasterClient = await NeynarClientInterface.start(runtime);
+    if (farcasterClient) clients.push(farcasterClient);
+  }
+
   if (character.plugins?.length > 0) {
     for (const plugin of character.plugins) {
       if (plugin.clients) {
@@ -225,8 +231,8 @@ export function createAgent(
       nodePlugin,
       character.settings.secrets?.WALLET_PUBLIC_KEY ? solanaPlugin : null,
     ].filter(Boolean),
-    providers: [timeProvider, personalityProvider],
-    actions: [],
+    providers: [timeProvider],
+    actions: [postToFarcasterAction],
     services: [],
     managers: [],
     cacheManager: cache,
