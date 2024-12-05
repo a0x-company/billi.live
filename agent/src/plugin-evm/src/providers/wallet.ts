@@ -62,7 +62,6 @@ export class WalletProvider {
     this.address = account.address;
 
     const createClients = (chain: SupportedChain): ChainConfig => {
-      console.log("chain", chain);
       const transport = http(getChainConfigs(runtime)[chain].rpcUrl);
       return {
         chain: getChainConfigs(runtime)[chain].chain,

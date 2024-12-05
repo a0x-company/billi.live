@@ -46,6 +46,18 @@ export const ChatBox: React.FC = () => {
     }
   }, [farcasterUser]);
 
+  const handleSendCast = async () => {
+    try {
+      const response = await axios.post("/api/cast", {
+        signer_uuid: farcasterUser?.signer_uuid,
+        text: newMessage.trim(),
+      });
+      console.log("response", response);
+    } catch (error) {
+      console.error("Error sending cast", error);
+    }
+  };
+
   const handleSendMessage = () => {
     if (!isSignerWriter) {
       setOpenQrSigner(true);
@@ -59,6 +71,8 @@ export const ChatBox: React.FC = () => {
       message: newMessage.trim(),
       timestamp: new Date(),
     };
+
+    handleSendCast();
 
     setMessages([...messages, message]);
     setNewMessage("");

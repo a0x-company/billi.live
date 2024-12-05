@@ -1,6 +1,10 @@
 const nextConfig = {
   images: {
-    domains: ["imagedelivery.net", "images.unsplash.com"],
+    domains: [
+      "imagedelivery.net",
+      "images.unsplash.com",
+      "s2.coinmarketcap.com",
+    ],
   },
 };
 

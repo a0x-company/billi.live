@@ -1,13 +1,29 @@
 "use client";
 
-import { config } from "@/config";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type ReactNode } from "react";
-import { State, WagmiProvider } from "wagmi";
-import { AuthKitProvider } from "@farcaster/auth-kit";
-import { SessionProvider } from "next-auth/react";
+// next
 import { Session } from "next-auth";
+import { SessionProvider } from "next-auth/react";
+
+// react
+import { type ReactNode } from "react";
+
+// react query
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// config
+import { config } from "@/config";
+
+// wagmi
+import { WagmiProvider } from "wagmi";
+
+// farcaster
+import { AuthKitProvider } from "@farcaster/auth-kit";
+
+// context
 import { FarcasterUserProvider } from "./FarcasterUserContext";
+
+// rainbowkit
+import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 
 const queryClient = new QueryClient();
 
@@ -17,21 +33,21 @@ const authKitConfig = {
 
 const ContextProvider = ({
   children,
-  initialState,
   session,
 }: {
   children: ReactNode;
-  initialState: State | undefined;
   session: Session | null;
 }) => {
   return (
-    <WagmiProvider config={config} initialState={initialState}>
+    <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <AuthKitProvider config={authKitConfig}>
-          <SessionProvider session={session}>
-            <FarcasterUserProvider>{children}</FarcasterUserProvider>
-          </SessionProvider>
-        </AuthKitProvider>
+        <RainbowKitProvider>
+          <AuthKitProvider config={authKitConfig}>
+            <SessionProvider session={session}>
+              <FarcasterUserProvider>{children}</FarcasterUserProvider>
+            </SessionProvider>
+          </AuthKitProvider>
+        </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

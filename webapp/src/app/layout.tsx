@@ -1,12 +1,23 @@
+// styles
+import "@rainbow-me/rainbowkit/styles.css";
+
+// components
 import Navbar from "@/components/navbar";
-import { config } from "@/config";
+
+// config
+
+// context
 import ContextProvider from "@/context";
+
+// next
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { headers } from "next/headers";
-import { cookieToInitialState } from "wagmi";
-import "./globals.css";
+
+// utils
 import { getSession } from "@/utils/sessions";
+
+// tailwind
+import "./globals.css";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -29,16 +40,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headersList = await headers();
-  const cookies = headersList.get("cookie");
-  const initialState = cookieToInitialState(config, cookies);
   const session = await getSession();
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ContextProvider initialState={initialState} session={session}>
+        <ContextProvider session={session}>
           <div className="min-h-screen bg-gray-900 transition-colors">
             <Navbar />
             <main className="max-w-[1440px] mx-auto">{children}</main>
