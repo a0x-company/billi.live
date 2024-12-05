@@ -21,7 +21,6 @@ export default function BrowserBroadcast({ streamKey }: BrowserBroadcastProps) {
   const { statusOfStreaming } = useStreaminStore();
 
   return (
-    // @ts-expect-error: unknown
     <Broadcast.Root ingestUrl={getIngest(streamKey)}>
       <Broadcast.Container className="h-full w-full ">
         <Broadcast.Video
