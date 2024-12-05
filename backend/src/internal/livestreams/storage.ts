@@ -14,6 +14,7 @@ export class LivestreamStorage {
   private readonly LIVES_COLLECTION = "livestreams";
 
   public async saveLivestream(
+    handle: string,
     title: string,
     description: string,
     livepeerInfo: StreamInfo
@@ -38,6 +39,7 @@ export class LivestreamStorage {
       const newDocRef = this.firestore.collection(this.LIVES_COLLECTION).doc(newCount.toString());
 
       await newDocRef.set({
+        handle,
         title,
         livepeerInfo,
         createdAt: new Date(),
@@ -86,6 +88,36 @@ export class LivestreamStorage {
     } catch (err: any) {
       console.log(err instanceof Error ? err.message : "error desconocido");
       throw new Error(err instanceof Error ? err.message : "error desconocido");
+    }
+  }
+
+  public async getLastLivestreamForHandle(handle: string): Promise<Livestream | null> {
+    try {
+      const querySnapshot = await this.firestore
+        .collection(this.LIVES_COLLECTION)
+        .where("handle", "==", handle)
+        .orderBy("createdAt", "desc")
+        .limit(1)
+        .get();
+
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        const data = doc.data();
+
+        return {
+          handle: data.handle,
+          title: data.title,
+          livepeerInfo: data.livepeerInfo,
+          createdAt: data.createdAt,
+          castInFarcaster: data.castInFarcaster,
+          status: data.status,
+        };
+      }
+
+      return null;
+    } catch (err: any) {
+      console.log(err instanceof Error ? err.message : "unknow error");
+      throw new Error(err instanceof Error ? err.message : "unknow error");
     }
   }
 }

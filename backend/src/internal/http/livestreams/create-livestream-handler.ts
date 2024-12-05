@@ -5,7 +5,13 @@ import { Context } from "./routes";
 
 export const createLivestreamHandler = (ctx: Context) => {
   return async (req: Request, res: Response) => {
-    const { title, description } = req.body;
+    const { handle, title, description } = req.body;
+
+    if (!handle) {
+      return res.status(401).json({
+        error: "handle is required in the body",
+      });
+    }
 
     if (!title) {
       return res.status(401).json({
@@ -19,7 +25,7 @@ export const createLivestreamHandler = (ctx: Context) => {
       });
     }
 
-    const livestream = await ctx.livestreamService.createLivestream(title, description);
+    const livestream = await ctx.livestreamService.createLivestream(handle, title, description);
 
     return res.status(200).json({
       message: "livestream created successfully",

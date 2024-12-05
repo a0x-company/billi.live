@@ -2,9 +2,10 @@
 import { Express, RequestHandler, Router } from "express";
 
 // handlers
-import { getLivesHandler } from "./get-lives-hander";
+import { getLivesHandler } from "./get-lives-handler";
 import { createLivestreamHandler } from "./create-livestream-handler";
 import { updateLivestreamStatus } from "./update-livestream-status";
+import { getLastLivestreamForHandleHandler } from "./get-last-livestream-for-handle-handler";
 
 // types
 import { Livestream } from "@internal/livestreams/types";
@@ -14,8 +15,9 @@ export type Context = {
 };
 
 interface LivestreamManager {
-  createLivestream(title: string, description: string): Promise<Livestream>;
+  createLivestream(handle: string, title: string, description: string): Promise<Livestream>;
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
+  getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
 }
 
 export function livestreamsRoutes(router: Express, ctx: Context) {
@@ -27,6 +29,8 @@ export function livestreamsRoutes(router: Express, ctx: Context) {
 
   // just for webhook
   livestreamsRouter.post("/update-livestream-status", updateLivestreamStatus(ctx));
+
+  livestreamsRouter.get("/info", getLastLivestreamForHandleHandler(ctx));
 
   router.use("/livestreams", livestreamsRouter);
 }

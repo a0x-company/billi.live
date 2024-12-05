@@ -9,8 +9,14 @@ import { LivestreamStorage } from "./storage";
 import { CreateLivestreamLivepeerResponse, Livestream, StreamInfo } from "./types";
 
 interface LivestreamManager {
-  saveLivestream(title: string, description: string, livepeerInfo: StreamInfo): Promise<void>;
+  saveLivestream(
+    handle: string,
+    title: string,
+    description: string,
+    livepeerInfo: StreamInfo
+  ): Promise<void>;
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
+  getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
 }
 
 interface LivepeerManager {
@@ -27,7 +33,11 @@ export class LivestreamService {
     this.livepeerService = new LivepeerService();
   }
 
-  public async createLivestream(title: string, description: string): Promise<Livestream> {
+  public async createLivestream(
+    handle: string,
+    title: string,
+    description: string
+  ): Promise<Livestream> {
     const livepeerResponse = await this.livepeerService.createLivestream(title, true);
 
     const streamInfo: StreamInfo = {
@@ -38,7 +48,7 @@ export class LivestreamService {
       srtIngestUrl: `srt://rtmp.livepeer.com:2935?streamid=${livepeerResponse.streamKey}`,
     };
 
-    await this.livestreamStorage.saveLivestream(title, description, streamInfo);
+    await this.livestreamStorage.saveLivestream(handle, title, description, streamInfo);
 
     const livestream: Livestream = {
       title: title,
@@ -55,5 +65,9 @@ export class LivestreamService {
     status: string
   ): Promise<Livestream | null> {
     return await this.livestreamStorage.updateLivestreamStatus(streamId, status);
+  }
+
+  public async getLastLivestreamForHandle(handle: string): Promise<Livestream | null> {
+    return await this.livestreamStorage.getLastLivestreamForHandle(handle);
   }
 }
