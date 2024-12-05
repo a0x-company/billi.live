@@ -1,2 +1,3 @@
-export * as http from "./server";
+export * from "./server";
+
 export { livestreamsRoutes } from "./livestreams/routes";

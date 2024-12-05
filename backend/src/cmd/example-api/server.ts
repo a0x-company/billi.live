@@ -1,5 +1,6 @@
 // dependencies
-import { http } from "../../internal/http/index";
+import { http } from "@internal";
+
 import { Router } from "express";
 
 // envs

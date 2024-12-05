@@ -1,6 +1,6 @@
 // environment
+export const NODE_ENV = process.env.NODE_ENV;
 export const PROJECT_ID = process.env.PROJECT_ID;
-export const DATABASE_ENV = process.env.DATABASE_ENV;
 
 function stopProgram(envKey: string) {
   console.error(`no ${envKey} specified in enviroment variable`);
@@ -9,6 +9,6 @@ function stopProgram(envKey: string) {
 
 // validation
 export function validateRequiredEnvs() {
+  if (!NODE_ENV) stopProgram("NODE_ENV");
   if (!PROJECT_ID) stopProgram("PROJECT_ID");
-  if (!DATABASE_ENV) stopProgram("DATABASE_ENV");
 }

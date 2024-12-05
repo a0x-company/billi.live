@@ -2,7 +2,7 @@
 import { Firestore } from "@google-cloud/firestore";
 
 // types
-import { StreamInfo } from "./types";
+import { Livestream, StreamInfo } from "./types";
 
 export class LivestreamStorage {
   firestore: Firestore;
@@ -49,6 +49,43 @@ export class LivestreamStorage {
     } catch (err: unknown) {
       console.log(err instanceof Error ? err.message : "unknow error");
       throw new Error(err instanceof Error ? err.message : "unknow error");
+    }
+  }
+
+  public async updateLivestreamStatus(
+    streamId: string,
+    status: string
+  ): Promise<Livestream | null> {
+    try {
+      const querySnapshot = await this.firestore
+        .collection(this.LIVES_COLLECTION)
+        .where("livepeerInfo.streamId", "==", streamId)
+        .limit(1)
+        .get();
+
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        await doc.ref.update({ status: status });
+
+        const updatedDoc = await doc.ref.get();
+        const data = updatedDoc.data();
+
+        if (data) {
+          return {
+            title: data.title,
+            livepeerInfo: data.livepeerInfo,
+            createdAt: data.createdAt,
+            castInFarcaster: data.castInFarcaster,
+            status: data.status,
+            description: data.description,
+          };
+        }
+      }
+
+      return null;
+    } catch (err: any) {
+      console.log(err instanceof Error ? err.message : "error desconocido");
+      throw new Error(err instanceof Error ? err.message : "error desconocido");
     }
   }
 }

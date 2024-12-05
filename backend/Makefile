@@ -1,5 +1,5 @@
 GIT_SHA := $(shell git rev-parse --short=7 HEAD)
-PROJECT_ID=zurf-social-app
+PROJECT_ID=billi-live
 REGION=us-central1
 SERVICE_ACCOUNT=feed-api@zurf-social-app.iam.gserviceaccount.com
 
@@ -77,7 +77,6 @@ deploy: validate-app-name validate-github-username build
 		--image gcr.io/$(PROJECT_ID)/$(DEPLOY_APP_NAME):$(GIT_SHA) \
 		--region $(REGION) \
 		--update-env-vars "$$(gcloud secrets versions access latest --secret $(DEPLOY_APP_NAME) | tr '\n' ',')" \
-		--service-account $(SERVICE_ACCOUNT) \
 		--allow-unauthenticated \
 		--memory 1Gi \
 		--cpu 1

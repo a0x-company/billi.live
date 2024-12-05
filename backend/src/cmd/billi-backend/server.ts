@@ -1,12 +1,10 @@
 // dependencies
 import { Firestore } from "@google-cloud/firestore";
+
+// internal
 import { http, config, livestreams } from "@internal";
 
-// envs
-const { NODE_ENV } = process.env;
-if (!NODE_ENV || !NODE_ENV.length) {
-  throw new Error("invalid NODE_ENV env value");
-}
+config.validateRequiredEnvs();
 
 // clients
 const firestore = new Firestore({ projectId: config.PROJECT_ID });
@@ -15,7 +13,7 @@ const firestore = new Firestore({ projectId: config.PROJECT_ID });
 const livestreamService = new livestreams.LivestreamService(firestore);
 
 // http
-const { app, server } = http.http.createServer();
+const { app, server } = http.createServer();
 http.livestreamsRoutes(app, { livestreamService });
 
 export default server;

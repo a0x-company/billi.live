@@ -10,6 +10,7 @@ import { CreateLivestreamLivepeerResponse, Livestream, StreamInfo } from "./type
 
 interface LivestreamManager {
   saveLivestream(title: string, description: string, livepeerInfo: StreamInfo): Promise<void>;
+  updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
 }
 
 interface LivepeerManager {
@@ -47,5 +48,12 @@ export class LivestreamService {
     };
 
     return livestream;
+  }
+
+  public async updateLivestreamStatus(
+    streamId: string,
+    status: string
+  ): Promise<Livestream | null> {
+    return await this.livestreamStorage.updateLivestreamStatus(streamId, status);
   }
 }
