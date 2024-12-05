@@ -1,15 +1,6 @@
-import {
-  getLivestream,
-  Livestream,
-} from "@/firebase/action/livestream/getLivestream";
+import { LivestreamError } from "@/components/token-detail/token-detail";
+import { getLivestream } from "@/firebase/action/livestream/getLivestream";
 import { NextResponse } from "next/server";
-
-export type StreamResponse = Livestream | LivestreamError;
-export enum LivestreamError {
-  LIVESTREAM_NOT_FOUND = "Livestream not found",
-  UNKNOWN_ERROR = "An unknown error occurred",
-  ADDRESS_REQUIRED = "address is required",
-}
 
 export async function GET(req: Request) {
   console.log("[GET][api/stream]");
