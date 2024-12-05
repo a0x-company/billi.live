@@ -10,7 +10,13 @@ import { LivestreamStorage } from "./storage";
 import { connectedUsers } from "./sharedState";
 
 const comments: {
-  [key: string]: { handle: string; profilePicture: string; comment: string }[];
+  [key: string]: {
+    id: string;
+    handle: string;
+    pfp: string;
+    comment: string;
+    timestamp: string;
+  }[];
 } = {};
 
 export function setupSocket(server: Server, firestore: Firestore) {
@@ -99,12 +105,12 @@ export function setupSocket(server: Server, firestore: Firestore) {
       console.log("User disconnected with socket ID:", socket.id);
     });
 
-    socket.on("newComment", async ({ streamId, handle, profilePicture, comment }) => {
+    socket.on("newComment", async ({ streamId, id, handle, pfp, comment, timestamp }) => {
       if (!comments[streamId]) {
         comments[streamId] = [];
       }
 
-      const newComment = { handle, profilePicture, comment };
+      const newComment = { id, handle, pfp, comment, timestamp };
       comments[streamId].push(newComment);
       io.to(streamId).emit("comment", newComment);
 

@@ -1,6 +1,6 @@
-import { LivestreamError } from "@/components/token-detail/token-detail";
 import { getLivestream } from "@/firebase/action/livestream/getLivestream";
 import { NextResponse } from "next/server";
+import { LivestreamError } from "@/types";
 
 export async function GET(req: Request) {
   console.log("[GET][api/stream]");

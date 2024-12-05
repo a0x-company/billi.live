@@ -1,6 +1,9 @@
-import { Livestream } from "@/firebase/action/livestream/getLivestream";
-import PlayerForHls from "../livepeer/player-hls";
+// react
 import { useState } from "react";
+// types
+import { Livestream } from "@/types";
+// components
+import PlayerForHls from "../livepeer/player-hls";
 
 const StreamViewer = ({ stream }: { stream: Livestream }) => {
   const [isStreaming, setIsStreaming] = useState(true);

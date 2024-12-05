@@ -1,44 +1,52 @@
 "use client";
-import React, { useContext, useEffect, useState } from "react";
+
+// react
+import React, { useContext, useEffect, useRef, useState } from "react";
+
+// icons
 import { Send } from "lucide-react";
+
+// utils
 import { format } from "date-fns";
+
+// context
 import {
   FarcasterUser,
   FarcasterUserContext,
   LOCAL_STORAGE_KEYS,
 } from "@/context/FarcasterUserContext";
+
+// components
 import { QRCode } from "@farcaster/auth-kit";
+
+// axios
 import axios from "axios";
 
-interface ChatMessage {
-  id: string;
-  user: string;
-  message: string;
-  timestamp: Date;
-}
+// types
+import { Comment } from "@/types";
 
-export const ChatBox: React.FC = () => {
+// socket
+import { Socket } from "socket.io-client";
+import { useParams } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+
+export const ChatBox: React.FC<{
+  comments: Comment[];
+  setComments: React.Dispatch<React.SetStateAction<Comment[]>>;
+  isConnectedRoom: React.MutableRefObject<boolean>;
+  socketRef: React.MutableRefObject<Socket | null>;
+}> = ({ comments, isConnectedRoom, setComments, socketRef }) => {
   const farcasterContext = useContext(FarcasterUserContext);
   const { farcasterUser, setFarcasterUser, isConnected, setIsConnected } =
     farcasterContext;
 
+  const { address } = useParams();
+
   const [isSignerWriter, setIsSignerWriter] = useState(false);
   const [openQrSigner, setOpenQrSigner] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: "1",
-      user: "Alice",
-      message: "Great stream!",
-      timestamp: new Date(),
-    },
-    {
-      id: "2",
-      user: "Bob",
-      message: "Thanks for sharing your knowledge!",
-      timestamp: new Date(),
-    },
-  ]);
   const [newMessage, setNewMessage] = useState("");
+  const commentsContainerRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
     if (farcasterUser?.fid && farcasterUser.status === "approved") {
@@ -46,36 +54,76 @@ export const ChatBox: React.FC = () => {
     }
   }, [farcasterUser]);
 
-  const handleSendCast = async () => {
-    try {
-      const response = await axios.post("/api/cast", {
-        signer_uuid: farcasterUser?.signer_uuid,
-        text: newMessage.trim(),
-      });
-      console.log("response", response);
-    } catch (error) {
-      console.error("Error sending cast", error);
-    }
-  };
-
   const handleSendMessage = () => {
     if (!isSignerWriter) {
       setOpenQrSigner(true);
       return;
     }
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !farcasterUser?.name || !farcasterUser?.pfpUrl)
+      return;
 
-    const message: ChatMessage = {
+    const message: Comment = {
       id: crypto.randomUUID(),
-      user: "You",
-      message: newMessage.trim(),
-      timestamp: new Date(),
+      handle: farcasterUser?.name,
+      pfp: farcasterUser?.pfpUrl,
+      comment: newMessage.trim(),
+      timestamp: new Date().toISOString(),
     };
 
-    handleSendCast();
+    console.log("message", message);
 
-    setMessages([...messages, message]);
+    if (socketRef.current) {
+      socketRef.current.emit("newComment", {
+        streamId: address,
+        ...message,
+      });
+    }
+
     setNewMessage("");
+  };
+
+  const [isUserAtBottom, setIsUserAtBottom] = useState(true);
+  // Auto-scroll to bottom when comments change
+  useEffect(() => {
+    if (commentsContainerRef.current) {
+      commentsContainerRef.current.scrollTop =
+        commentsContainerRef.current.scrollHeight;
+    }
+  }, [comments]);
+  // Check scroll position and update state
+  useEffect(() => {
+    const checkScrollPosition = () => {
+      if (commentsContainerRef.current) {
+        const { scrollHeight, scrollTop, clientHeight } =
+          commentsContainerRef.current;
+
+        // Use a small threshold to account for potential pixel-level discrepancies
+        const atBottom = scrollHeight - scrollTop - clientHeight <= 20;
+        setIsUserAtBottom(atBottom);
+      }
+    };
+
+    const currentRef = commentsContainerRef.current;
+    if (currentRef) {
+      // Initial check
+      checkScrollPosition();
+
+      // Add scroll event listener
+      currentRef.addEventListener("scroll", checkScrollPosition);
+
+      // Cleanup listener
+      return () => {
+        currentRef.removeEventListener("scroll", checkScrollPosition);
+      };
+    }
+  }, []);
+
+  // Scroll to bottom method
+  const handleScrollToBottom = () => {
+    if (commentsContainerRef.current) {
+      commentsContainerRef.current.scrollTop =
+        commentsContainerRef.current.scrollHeight;
+    }
   };
 
   /* GET SIGNER STATUS */
@@ -167,21 +215,47 @@ export const ChatBox: React.FC = () => {
           </div>
         </div>
       )}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div key={msg.id} className="flex flex-col">
+
+      <ul
+        ref={commentsContainerRef}
+        className="flex-1 p-4 space-y-4 overflow-y-scroll scrollbar-hidden relative"
+      >
+        {comments.map((msg) => (
+          <li key={msg.id} className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-sm dark:text-white">
-                {msg.user}
-              </span>
+              <Link
+                href={`https://warpcast.com/${msg.handle}`}
+                target="_blank"
+                className="flex items-center gap-2"
+              >
+                <Image
+                  src={msg.pfp}
+                  alt={msg.handle}
+                  width={24}
+                  height={24}
+                  className="rounded-full"
+                />
+                <span className="font-semibold text-sm dark:text-white">
+                  {msg.handle}
+                </span>
+              </Link>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {format(msg.timestamp, "HH:mm")}
+                {format(new Date(msg.timestamp), "HH:mm")}
               </span>
             </div>
-            <p className="text-sm dark:text-gray-300">{msg.message}</p>
-          </div>
+            <p className="text-sm dark:text-gray-300">{msg.comment}</p>
+          </li>
         ))}
-      </div>
+      </ul>
+
+      {!isUserAtBottom && comments.length > 5 && (
+        <button
+          onClick={handleScrollToBottom}
+          className="mb-2 w-40 self-center bg-purple-600 text-white p-2 rounded-md hover:bg-purple-700 transition-colors"
+        >
+          Scroll to bottom
+        </button>
+      )}
 
       <div className="p-4 border-t dark:border-gray-700">
         <div className="flex gap-2">

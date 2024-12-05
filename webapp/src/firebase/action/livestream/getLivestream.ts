@@ -1,24 +1,6 @@
 import { getDocs, query, where } from "firebase/firestore";
 import { livestreamDataCollection } from "@/firebase/client";
-
-export interface LivepeerInfo {
-  embeaddableBroadcastUrl: string;
-  playbackUrl: string;
-  srtIngestUrl: string;
-  streamId: string;
-  streamKey: string;
-}
-
-export interface Livestream {
-  tokenAddress?: string;
-  createdByFID?: number;
-  createdByUsername?: string;
-  title: string;
-  createdAt: string;
-  description: string;
-  livepeerInfo: LivepeerInfo;
-  status: string;
-}
+import { Livestream } from "@/types";
 
 export const getLivestream = async (
   id: string,
