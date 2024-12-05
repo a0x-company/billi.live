@@ -8,19 +8,19 @@ export const createLivestreamHandler = (ctx: Context) => {
     const { handle, title, description } = req.body;
 
     if (!handle) {
-      return res.status(401).json({
+      return res.status(400).json({
         error: "handle is required in the body",
       });
     }
 
     if (!title) {
-      return res.status(401).json({
+      return res.status(400).json({
         error: "title is required in the body",
       });
     }
 
     if (!description) {
-      return res.status(401).json({
+      return res.status(400).json({
         error: "description is required in the body",
       });
     }
