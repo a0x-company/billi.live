@@ -48,18 +48,10 @@ export const authOptions: AuthOptions = {
           });
           const { success, fid } = verifyResponse;
           if (!success) return null;
-          // const customToken = await adminAuth.createCustomToken(
-          //   fid.toString(),
-          //   {
-          //     role: "user",
-          //   }
-          // );
-          // console.log("customToken", customToken);
           return {
             id: fid.toString(),
             name: credentials.name,
             image: credentials.pfp,
-            // customToken,
           };
         } catch (error) {
           console.log("error", error);

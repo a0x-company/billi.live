@@ -22,19 +22,7 @@ import { BASE_ADDRESS } from "@/constants/address";
 
 const PRESET_AMOUNTS = [0.01, 0.05, 0.1, 0.25, 0.5, 1];
 
-interface TradeActionsProps {
-  onBuy: (amount: number) => void;
-  onSell: (amount: number) => void;
-  onAmountSelect: (amount: number) => void;
-  selectedAmount: number;
-}
-
-export const TradeActions: React.FC<TradeActionsProps> = ({
-  onBuy,
-  onSell,
-  onAmountSelect,
-  selectedAmount,
-}) => {
+export const TradeActions: React.FC = () => {
   const { address, isDisconnected } = useAccount();
   const { data: balance } = useReadContracts({
     allowFailure: false,
@@ -70,7 +58,6 @@ export const TradeActions: React.FC<TradeActionsProps> = ({
   const { openAccountModal } = useAccountModal();
 
   const handleAmountSelect = (amount: number) => {
-    onAmountSelect(amount);
     setAmount(amount);
     setAmountFormatted(amount.toString());
   };
@@ -104,6 +91,16 @@ export const TradeActions: React.FC<TradeActionsProps> = ({
     }
   };
 
+  const handleBuy = (amount: number) => {
+    console.log("Buying:", amount);
+    // Implement buy logic
+  };
+
+  const handleSell = (amount: number) => {
+    console.log("Selling:", amount);
+    // Implement sell logic
+  };
+
   return (
     <div className="p-4 space-y-4 relative rounded-lg">
       {isDisconnected && (
@@ -114,12 +111,12 @@ export const TradeActions: React.FC<TradeActionsProps> = ({
       )}
 
       <div className="grid grid-cols-3 gap-2">
-        {PRESET_AMOUNTS.map((amount) => (
+        {PRESET_AMOUNTS.map((amountPreset) => (
           <button
-            key={amount}
-            onClick={() => handleAmountSelect(amount)}
+            key={amountPreset}
+            onClick={() => handleAmountSelect(amountPreset)}
             className={`rounded-lg transition-colors flex items-center justify-center gap-2 leading-none py-2.5 ${
-              selectedAmount === amount
+              amount === amountPreset
                 ? "bg-purple-600 text-white"
                 : "bg-gray-800 text-gray-300 hover:bg-gray-700"
             }`}
@@ -130,7 +127,7 @@ export const TradeActions: React.FC<TradeActionsProps> = ({
               width={14}
               height={14}
             />
-            {amount}
+            {amountPreset}
           </button>
         ))}
       </div>
@@ -173,14 +170,14 @@ export const TradeActions: React.FC<TradeActionsProps> = ({
       {!isDisconnected && (
         <div className="flex gap-2">
           <button
-            onClick={() => onBuy(selectedAmount)}
+            onClick={() => handleBuy(amount)}
             className="flex items-center justify-center flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg transition-colors"
           >
             <Zap className="w-4 h-4 mr-2" />
             Pump
           </button>
           <button
-            onClick={() => onSell(selectedAmount)}
+            onClick={() => handleSell(amount)}
             className="flex items-center justify-center flex-1 bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-lg transition-colors"
           >
             <Tag className="w-4 h-4 mr-2" />

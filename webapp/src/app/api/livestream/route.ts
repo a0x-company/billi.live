@@ -1,6 +1,9 @@
-import { getLivestream } from "@/firebase/action/livestream/getLivestream";
-import { NextResponse } from "next/server";
 import { LivestreamError } from "@/types";
+import { NextResponse } from "next/server";
+
+import axios from "axios";
+
+const API_URL = process.env.API_URL;
 
 export async function GET(req: Request) {
   console.log("[GET][api/stream]");
@@ -15,7 +18,12 @@ export async function GET(req: Request) {
 
   try {
     console.log("[GET][api/stream] address", address);
-    const livestream = await getLivestream(address, "tokenAddress");
+    const normalizedAddress = address.toLowerCase();
+    const response = await axios.get(
+      `${API_URL}/livestreams/livestream-by-token-address?tokenAddress=${normalizedAddress}`
+    );
+    const livestream = response.data;
+
     if (!livestream) {
       return NextResponse.json(
         { error: LivestreamError.LIVESTREAM_NOT_FOUND },

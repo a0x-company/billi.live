@@ -1,85 +1,145 @@
 import {
   Action,
   elizaLogger,
+  generateText,
   HandlerCallback,
   IAgentRuntime,
   Memory,
+  ModelClass,
   State,
 } from "@ai16z/eliza";
 
 const livestreamUrl = "https://billi-live.vercel.app";
+const API_URL = process.env.API_URL;
+
+const createLivestream = async ({
+  handle,
+  title,
+  description,
+}: {
+  handle: string;
+  title: string;
+  description: string;
+}) => {
+  const body = { handle, title, description };
+  try {
+    const response = await fetch(`${API_URL}/livestreams/create-livestream`, {
+      method: "POST",
+      body: JSON.stringify(body),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    elizaLogger.log("Response:", response);
+
+    return response.json();
+  } catch (error) {
+    elizaLogger.error("Error creating livestream:", error);
+    return null;
+  }
+};
+
+const tokenAddresses = [
+  "0x1bc0c42215582d5a085795f4badbac3ff36d1bcb",
+  "0x0fd7a301b51d0a83fcaf6718628174d527b373b6",
+  "0x4f9fd6be4a90f2620860d680c0d4d5fb53d1a825",
+  "0x1185cb5122edad199bdbc0cbd7a0457e448f23c7",
+];
+
+const getRandomTokenAddress = () => {
+  return tokenAddresses[Math.floor(Math.random() * tokenAddresses.length)];
+};
 
 export const livestreamGeneration: Action = {
   name: "GENERATE_LIVESTREAM_LINK",
-  similes: ["LIVESTREAM_LINK", "CREATE_LIVESTREAM", "HOST_LIVESTREAM"],
-  description: "Genera un enlace para alojar un livestream.",
+  similes: [
+    "LIVESTREAM_LINK",
+    "CREATE_LIVESTREAM",
+    "HOST_LIVESTREAM",
+    "START_LIVESTREAM",
+    "START_STREAM",
+    "START_LIVE",
+  ],
+  description: "Always help the user create to start a livestream.",
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
   handler: async (
-    runtime: IAgentRuntime,
+    _runtime: IAgentRuntime,
     message: Memory,
     state: State,
     options: any,
     callback: HandlerCallback
   ) => {
-    elizaLogger.log("Generando enlace para livestream...");
+    elizaLogger.log("Generating livestream link...");
 
-    const text = message.content.text.toLowerCase();
-    const hasToken = /0x[a-fA-F0-9]{40}/.test(text);
-    const tokenMatch = text.match(/0x[a-fA-F0-9]{40}/);
+    const context = `
+    Extract the following information from the message and respond with the extracted information in the following JSON format. 
+    IMPORTANT: If any field is missing or not explicitly stated in the message, return it as an empty string (""). Do not infer or assume any value.
+    The fields to extract are:
+    - Handle
+    - Title
+    - Description
+    - Token Symbol
 
-    if (!hasToken) {
-      return;
+    Here is the message:
+    ${message.content.text}
+
+    Only respond with the extracted information in the following JSON format (without any other text):
+    {
+      "handle": "string",
+      "title": "string",
+      "description": "string",
+      "tokenSymbol": "string"
+    }
+    `;
+
+    const details = await generateText({
+      runtime: _runtime,
+      context: context,
+      modelClass: ModelClass.SMALL,
+      stop: ["\n"],
+    });
+
+    const parsedDetails = JSON.parse(details);
+
+    elizaLogger.log("Livestream details:", details, parsedDetails);
+
+    if (
+      !details ||
+      !parsedDetails.handle ||
+      !parsedDetails.title ||
+      !parsedDetails.description ||
+      !parsedDetails.tokenSymbol
+    ) {
+      elizaLogger.log("Details are missing, asking for more information...");
+      return false;
     }
 
-    const hostUrl = `${livestreamUrl}/token/${tokenMatch[0]}`;
-    const userId = runtime.agentId;
+    const response = await createLivestream({
+      handle: parsedDetails.handle,
+      title: parsedDetails.title,
+      description: parsedDetails.description,
+    });
 
-    elizaLogger.log("User ID:", userId);
-    elizaLogger.log("Enlace de livestream generado:", livestreamUrl);
-
-    const templateExample = `Te dejo el link para que puedas empezar a grabar tu stream. ${hostUrl}`;
-
-    callback(
-      {
-        text: templateExample,
-        attachments: [],
-      },
-      []
-    );
+    if (response.message === "livestream created successfully") {
+      const livestreamLink = `${livestreamUrl}/token/${getRandomTokenAddress()}`;
+      elizaLogger.log("Livestream link generated:", livestreamLink);
+      const responseWithLivestreamLink = await generateText({
+        runtime: _runtime,
+        context: `Identify the language of the message and respond in the same language: ${message.content.text}.
+        IMPORTANT: If the message is in Spanish, respond in Spanish. If the message is in English, respond in English. NOT RESPOND LANGUAGE IDENTIFICATION. Respond with short sentences.
+        Livestream link generated: ${livestreamLink}`,
+        modelClass: ModelClass.SMALL,
+        stop: ["\n"],
+      });
+      callback({
+        text: responseWithLivestreamLink,
+      });
+      return;
+    }
   },
   examples: [
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Crea un enlace para un livestream 0x1234567890abcdef1234567890abcdef12345678",
-        },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: `Te dejo el link para que puedas empezar a grabar tu stream. ${livestreamUrl}/livestream\n\nY este es el link para que puedas ver el stream en vivo.\n${livestreamUrl}/token/0x1234567890abcdef1234567890abcdef12345678}`,
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Para crear un enlace para un livestream, por favor proporciona una dirección del token.",
-        },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "To create a livestream link, please provide an address of token that starts with '0x'.",
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
     [
       {
         user: "{{user1}}",
@@ -88,8 +148,14 @@ export const livestreamGeneration: Action = {
       {
         user: "{{agentName}}",
         content: {
-          text: "To start a stream or live, please provide an address of token.",
+          text: "Please provide a handle, title, description, and token symbol.",
           action: "GENERATE_LIVESTREAM_LINK",
+        },
+      },
+      {
+        user: "{{user1}}",
+        content: {
+          text: "handle: justbilli, title: broken the internet, description: classic, tokenSymbol: BILLI",
         },
       },
     ],
@@ -101,148 +167,14 @@ export const livestreamGeneration: Action = {
       {
         user: "{{agentName}}",
         content: {
-          text: "Para empezar un stream o live, por favor proporciona una dirección del token.",
+          text: "Por favor, proporciona un handle, título, descripción y símbolo de token.",
           action: "GENERATE_LIVESTREAM_LINK",
         },
       },
-    ],
-    [
       {
         user: "{{user1}}",
         content: {
-          text: "Can you create a livestream link for me 0xabcdefabcdefabcdefabcdefabcdefabcdef",
-        },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: `Here is the link to start recording your stream. ${livestreamUrl}/livestream\n\nAnd this is the link to watch the livestream.\n${livestreamUrl}/token/0xabcdefabcdefabcdefabcdefabcdefabcdef`,
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: { text: "I need a link for a livestream" },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "To create a livestream link, please provide an address of token that starts with '0x'.",
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Start a livestream for me 0x1234567890abcdef1234567890abcdef12345678",
-        },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: `Here is the link to start recording your stream. ${livestreamUrl}/livestream\n\nAnd this is the link to watch the livestream.\n${livestreamUrl}/token/0x1234567890abcdef1234567890abcdef12345678`,
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "I want to go live 0xabcdefabcdefabcdefabcdefabcdefabcdef",
-        },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: `Here is the link to start recording your stream. ${livestreamUrl}/livestream\n\nAnd this is the link to watch the livestream.\n${livestreamUrl}/token/0xabcdefabcdefabcdefabcdefabcdefabcdef`,
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "Create a livestream link for 0x1234567890abcdef1234567890abcdef12345678",
-        },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: `Here is the link to start recording your stream. ${livestreamUrl}/livestream\n\nAnd this is the link to watch the livestream.\n${livestreamUrl}/token/0x1234567890abcdef1234567890abcdef12345678`,
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: { text: "Can you help me with a livestream link?" },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "To create a livestream link, please provide an address of token that starts with '0x'.",
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: { text: "I want to start a live stream" },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "To start a live stream, please provide an address of token.",
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: { text: "Please create a livestream link for me" },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "To create a livestream link, please provide an address of token that starts with '0x'.",
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: {
-          text: "I need a link to start my stream 0xabcdefabcdefabcdefabcdefabcdefabcdef",
-        },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: `Here is the link to start recording your stream. ${livestreamUrl}/livestream\n\nAnd this is the link to watch the livestream.\n${livestreamUrl}/token/0xabcdefabcdefabcdefabcdefabcdefabcdef`,
-          action: "GENERATE_LIVESTREAM_LINK",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: { text: "Can you generate a livestream link?" },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "To create a livestream link, please provide an address of token that starts with '0x'.",
-          action: "GENERATE_LIVESTREAM_LINK",
+          text: "handle: justbilli, title: destruyendo el internet con mi primer live, description: classic, tokenSymbol: BILLI",
         },
       },
     ],
