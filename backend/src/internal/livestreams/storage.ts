@@ -147,4 +147,34 @@ export class LivestreamStorage {
       throw new Error(err instanceof Error ? err.message : "unknow error");
     }
   }
+
+  public async getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null> {
+    try {
+      const querySnapshot = await this.firestore
+        .collection(this.LIVES_COLLECTION)
+        .where("tokenAddress", "==", tokenAddress)
+        .orderBy("createdAt", "desc")
+        .limit(1)
+        .get();
+
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        const data = doc.data();
+
+        return {
+          handle: data.handle,
+          tokenAddress: data.tokenAddress,
+          title: data.title,
+          livepeerInfo: data.livepeerInfo,
+          createdAt: data.createdAt,
+          status: data.status,
+        };
+      }
+
+      return null;
+    } catch (err: any) {
+      console.log(err instanceof Error ? err.message : "unknow error");
+      throw new Error(err instanceof Error ? err.message : "unknow error");
+    }
+  }
 }

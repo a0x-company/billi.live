@@ -7,6 +7,7 @@ import { createLivestreamHandler } from "./create-livestream-handler";
 import { updateLivestreamStatus } from "./update-livestream-status";
 import { getLastLivestreamForHandleHandler } from "./get-last-livestream-for-handle-handler";
 import { getLivesForLandingHandler } from "./get-lives-for-landing-handler";
+import { getLivestreamByTokenAddressHandler } from "./get-livestream-for-token-address-handler";
 
 // types
 import { Livestream } from "@internal/livestreams/types";
@@ -20,6 +21,7 @@ interface LivestreamManager {
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
   getLivesForLanding(): Promise<Livestream[]>;
+  getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
 }
 
 export function livestreamsRoutes(router: Express, ctx: Context) {
@@ -32,9 +34,11 @@ export function livestreamsRoutes(router: Express, ctx: Context) {
   // just for webhook
   livestreamsRouter.post("/update-livestream-status", updateLivestreamStatus(ctx));
 
-  livestreamsRouter.get("/info", getLastLivestreamForHandleHandler(ctx));
+  livestreamsRouter.get("/livestream-for-handle", getLastLivestreamForHandleHandler(ctx));
 
   livestreamsRouter.get("/lives-for-landing", getLivesForLandingHandler(ctx));
+
+  livestreamsRouter.get("/livestream-by-token-address", getLivestreamByTokenAddressHandler(ctx));
 
   router.use("/livestreams", livestreamsRouter);
 }
