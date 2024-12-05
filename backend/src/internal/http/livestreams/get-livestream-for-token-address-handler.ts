@@ -19,8 +19,6 @@ export const getLivestreamByTokenAddressHandler = (ctx: Context) => {
 
     const livestream = await ctx.livestreamService.getLivestreamByTokenAddress(tokenAddress);
 
-    console.log("livestream", livestream);
-
     if (!livestream) {
       return res.status(404).json({ error: "No livestream found for token address" });
     }

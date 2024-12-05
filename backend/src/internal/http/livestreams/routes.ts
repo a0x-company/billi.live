@@ -34,7 +34,7 @@ export function livestreamsRoutes(router: Express, ctx: Context) {
   // just for webhook
   livestreamsRouter.post("/update-livestream-status", updateLivestreamStatus(ctx));
 
-  livestreamsRouter.get("/info", getLastLivestreamForHandleHandler(ctx));
+  livestreamsRouter.get("/livestream-for-handle", getLastLivestreamForHandleHandler(ctx));
 
   livestreamsRouter.get("/lives-for-landing", getLivesForLandingHandler(ctx));
 
