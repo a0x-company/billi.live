@@ -1,5 +1,6 @@
-import { getSignedKey } from "@/lib/getSignedKey";
 import { NextResponse } from "next/server";
+
+import { getSignedKey } from "@/lib/getSignedKey";
 import neynarClient from "@/lib/neynarClient";
 import { saveUser } from "@/firebase/action/saveUser";
 import { updateUser } from "@/firebase/action/updateUser";
