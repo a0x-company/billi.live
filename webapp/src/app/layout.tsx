@@ -50,7 +50,7 @@ export default async function RootLayout({
           <div className="min-h-screen bg-gray-900 transition-colors">
             {/* <Navbar /> */}
 
-            <main className="max-w-[1440px] mx-auto">{children}</main>
+            {children}
           </div>
         </ContextProvider>
       </body>

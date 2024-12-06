@@ -4,7 +4,6 @@ import neynarClient from "@/lib/neynarClient";
 import { saveUser } from "@/firebase/action/saveUser";
 import { updateUser } from "@/firebase/action/updateUser";
 import { getRefUser, getUser } from "@/firebase/action/getUser";
-// import { adminAuth } from "@/firebase/firebase-admin";
 
 export async function POST(request: Request) {
   console.log("[POST][api/signer]");
@@ -20,8 +19,6 @@ export async function POST(request: Request) {
 
   try {
     const signedKey = await getSignedKey();
-    // const verifyToken = await adminAuth.verifySessionCookie(user.customToken);
-    // console.log("verifyToken: ", verifyToken);
     const userWithSignedKey = {
       ...user,
       signer_uuid: signedKey.signer_uuid,
@@ -29,7 +26,7 @@ export async function POST(request: Request) {
       status: signedKey.status,
       signer_approval_url: signedKey.signer_approval_url,
     };
-    console.log("userWithSignedKey: ", userWithSignedKey);
+
     await saveUser(userWithSignedKey);
 
     return NextResponse.json(signedKey, {
