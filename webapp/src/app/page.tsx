@@ -1,3 +1,9 @@
+import Image from "next/image";
+
+// icons
+import { PiChartLineUpBold } from "react-icons/pi";
+import { PiTelevisionSimpleFill } from "react-icons/pi";
+
 // components
 import { BilliPresentation } from "@/components/landing/BilliPresentation";
 import { LiveChannels } from "@/components/landing/LiveChannels";
@@ -5,17 +11,16 @@ import { LiveChannels } from "@/components/landing/LiveChannels";
 export default function Home() {
   return (
     <div className="flex min-h-screen">
-      {/* Navegación izquierda */}
+      {/* Left navigation */}
       <nav className="w-64 bg-black/80 backdrop-blur-sm border-r border-white/10 h-screen fixed left-0 top-0">
         <div className="p-6">
-          {/* Logo/Home */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-white">
               <span className="text-purple-500">Billi</span>
             </h2>
           </div>
 
-          {/* Lista de navegación */}
+          {/* Navigation list */}
           <ul className="space-y-4">
             <li>
               <a
@@ -53,13 +58,12 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Contenido principal con margen para ambas columnas */}
+      {/* Main content with margin for both columns */}
       <main className="flex-1 ml-64">
         <section className="relative min-h-screen">
-          {/* Video de fondo con overlay */}
+          {/* Background video with overlay */}
           <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0 bg-black/50 z-10" />{" "}
-            {/* Overlay oscuro */}
+            <div className="absolute inset-0 bg-black/60 z-10" />{" "}
             <video
               src="/assets/landing/static.mp4"
               autoPlay
@@ -70,26 +74,77 @@ export default function Home() {
             />
           </div>
 
-          {/* Contenido principal */}
+          {/* Main content */}
           <div className="relative z-20 container mx-auto px-4 py-20">
             <BilliPresentation />
 
             <LiveChannels />
+          </div>
 
-            {/* Sección de características */}
-            <div className="grid md:grid-cols-3 gap-8 mt-20">
-              {features.map((feature, index) => (
-                <div
-                  key={index}
-                  className="bg-white/5 backdrop-blur-sm p-6 rounded-xl hover:bg-white/10 transition-colors"
-                >
-                  <h3 className="text-xl font-semibold text-white mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-300">{feature.description}</p>
+          {/* Footer - ahora dentro de la sección con el video */}
+          <div className="absolute bottom-0 left-0 right-0 z-20">
+            <footer className="bg-black/80 backdrop-blur-sm border-t border-white/10 py-4">
+              <div className="container mx-auto px-4">
+                <div className="flex items-center justify-center space-x-6">
+                  <div className="flex flex-row gap-[5px] max-md:w-1/3 items-center justify-center">
+                    <div className="text-white">
+                      <PiTelevisionSimpleFill style={{ color: "inherit" }} />
+                    </div>
+
+                    <a
+                      href="https://www.coingecko.com/en/coins/zurf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white text-[12px] font-base"
+                    >
+                      Vision
+                    </a>
+                  </div>
+
+                  <div className="flex flex-row gap-[5px] max-md:w-1/3 items-center justify-center">
+                    <div className="text-white">
+                      <PiChartLineUpBold style={{ color: "inherit" }} />
+                    </div>
+
+                    <a
+                      href="https://dune.com/discover/content/trending"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white text-[12px] font-base"
+                    >
+                      Analytics
+                    </a>
+                  </div>
+
+                  <div className="flex flex-row gap-[5px] max-md:w-1/3 items-center justify-center">
+                    <div className="text-white">
+                      <Image
+                        src="/assets/landing/farcaster.svg"
+                        alt="farcaster logo"
+                        width={16}
+                        height={16}
+                      />
+                    </div>
+
+                    <a
+                      href="https://warpcast.com/justbilli"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-white text-[12px] font-base"
+                    >
+                      Farcaster
+                    </a>
+                  </div>
+
+                  {/* <a
+                    href="/x"
+                    className="text-gray-400 hover:text-white text-sm flex items-center"
+                  >
+                    <span>X</span>
+                  </a> */}
                 </div>
-              ))}
-            </div>
+              </div>
+            </footer>
           </div>
         </section>
       </main>
