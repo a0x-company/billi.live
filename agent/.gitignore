@@ -3,5 +3,6 @@
 node_modules
 package-lock.json
 dist/src
+!node_modules/@ai16z
 dist
 db.sqlite
