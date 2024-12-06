@@ -60,10 +60,11 @@ export function BilliPresentation() {
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
         <button className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors">
-          Comenzar a transmitir
+          <p className="font-bold">Start streaming</p>
         </button>
+
         <button className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium backdrop-blur-sm transition-colors">
-          Explorar streams
+          <p className="font-bold">Explore streams</p>
         </button>
       </div>
     </div>

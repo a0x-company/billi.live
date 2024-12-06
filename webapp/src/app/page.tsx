@@ -1,5 +1,6 @@
 // components
 import { BilliPresentation } from "@/components/landing/BilliPresentation";
+import { LiveChannels } from "@/components/landing/LiveChannels";
 
 export default function Home() {
   return (
@@ -72,6 +73,8 @@ export default function Home() {
           {/* Contenido principal */}
           <div className="relative z-20 container mx-auto px-4 py-20">
             <BilliPresentation />
+
+            <LiveChannels />
 
             {/* Sección de características */}
             <div className="grid md:grid-cols-3 gap-8 mt-20">
