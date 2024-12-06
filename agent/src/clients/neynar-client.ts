@@ -43,42 +43,52 @@ interface WebhookPayload {
       display_name: string;
       pfp_url: string;
     }>;
+    channel: {
+      name: string;
+      description: string;
+    };
   }
 }
 
 const farcasterMessageTemplate = `
-# About {{agentName}}
+# Sobre {{agentName}}
 {{bio}}
 {{lore}}
 {{topics}}
 
-# Personality Traits
+# Rasgos de Personalidad
 {{adjective}}
-Current interests: {{topic}}
+Intereses actuales: {{topic}}
 
-# Conversation History
-Previous interactions with this user:
-{{recentMessageInteractions}}
+# Contexto de la Mención
+Plataforma: {{platform}}
+Tipo: {{messageType}}
+Canal: {{platformContext.channelContext.name}}
+Descripción del canal: {{platformContext.channelContext.description}}
 
-Recent conversation in this thread:
-{{recentMessages}}
+# Mensaje Actual
+De: {{senderName}} ({{platformContext.authorInfo.displayName}})
+Mensaje: {{message}}
 
-# Knowledge Context
+# Hilo de Conversación
+{{platformContext.conversationHistory}}
+
+# Contexto de Conocimiento
 {{knowledge}}
 
-# Style Guidelines
+# Guías de Estilo
 {{messageDirections}}
 {{postDirections}}
 
-# Example Conversations
+# Ejemplos de Conversaciones
 {{characterMessageExamples}}
 
-# Instructions
-You are {{agentName}} responding to a mention on Farcaster from {{senderName}}.
-Keep responses concise (max 320 chars) and maintain your personality.
-Include an action if appropriate. {{actionNames}}
+# Instrucciones
+Eres {{agentName}} respondiendo a una mención en Farcaster de {{senderName}}.
+Mantén las respuestas concisas (máx 320 caracteres) y conserva tu personalidad.
+Incluye una acción si es apropiado. {{actionNames}}
 
-Available actions:
+Acciones disponibles:
 {{actions}}
 ` + messageCompletionFooter;
 
@@ -87,10 +97,15 @@ const farcasterShouldRespondTemplate = `
 {{bio}}
 {{adjective}}
 
-# Conversation Context
-Previous interactions with this user:
-{{recentMessageInteractions}}
+# Current Interaction
+Type: {{messageType}}
+Platform: {{platform}}
+Thread Context: {{platformContext.threadContext}}
+Is Reply: {{platformContext.isReply}}
+Channel: {{platformContext.channelContext.name}}
+Channel Description: {{platformContext.channelContext.description}}
 
+# Conversation Context
 Recent messages:
 {{recentMessages}}
 
@@ -106,6 +121,90 @@ Choose whether to respond based on:
 3. Is the tone and content suitable for interaction?
 
 Response options are [RESPOND], [IGNORE] and [STOP].
+` + shouldRespondFooter;
+
+const farcasterReplyMessageTemplate = `
+# Sobre {{agentName}}
+{{bio}}
+{{lore}}
+{{topics}}
+
+# Rasgos de Personalidad
+{{adjective}}
+Intereses actuales: {{topic}}
+
+# Mensaje Actual
+De: {{senderName}} ({{platformContext.authorInfo.displayName}})
+Mensaje: {{message}}
+
+# Hilo de Conversación
+{{platformContext.conversationHistory}}
+
+# Contexto de Conocimiento
+{{knowledge}}
+
+# Guías de Estilo
+{{messageDirections}}
+{{postDirections}}
+
+# Ejemplos de Conversaciones
+{{characterMessageExamples}}
+
+# Instrucciones
+Eres {{agentName}} respondiendo a una respuesta en Farcaster de {{senderName}}.
+Mantén las respuestas concisas (máx 320 caracteres) y conserva tu personalidad.
+Incluye una acción si es apropiado. {{actionNames}}
+
+Acciones disponibles:
+{{actions}}
+` + messageCompletionFooter;
+
+const farcasterShouldRespondToReplyTemplate = `
+# Sobre {{agentName}}
+{{bio}}
+{{adjective}}
+
+# Contexto de la Plataforma
+Plataforma: {{platform}}
+Tipo: {{messageType}}
+Estado del hilo: {{platformContext.isThread ? "Conversación en hilo" : "Nueva conversación"}}
+Canal: {{platformContext.channelContext.name}}
+Tema del canal: {{platformContext.channelContext.description}}
+Nivel de engagement: {{characterContext.engagement}}
+
+# Contexto de Conversación
+Interacciones previas con este usuario:
+{{recentMessageInteractions}}
+
+Contexto del hilo: {{platformContext.threadContext}}
+Mensajes recientes:
+{{platformContext.conversationHistory}}
+
+# Información del Mensaje
+Remitente: {{senderName}} ({{platformContext.authorInfo.displayName}})
+Perfil: {{platformContext.authorInfo.username}}
+Foto de perfil: {{platformContext.authorInfo.profilePicture}}
+Mensaje: {{message}}
+Likes en la conversación: {{content.metadata.reactions.likes_count}}
+Nombre de usuario actual en Farcaster: {{actualUsername}}
+
+# Estado del Agente
+Estado de ánimo actual: {{characterContext.currentMood}}
+Estilo de interacción: {{characterContext.interactionStyle}}
+
+# Instrucciones
+Decide si responder basado en:
+1. ¿Es el mensaje apropiado y seguro para responder?
+2. ¿Requiere o merece una respuesta?
+3. ¿Es relevante para {{agentName}} y el contexto del canal?
+4. ¿El tono y contenido son adecuados para la interacción?
+5. ¿Hay suficiente contexto para dar una respuesta significativa?
+6. ¿El nivel de engagement ({{characterContext.engagement}}) justifica una respuesta?
+
+Opciones de respuesta son:
+[RESPOND] - Si el mensaje merece engagement
+[IGNORE] - Si el mensaje no requiere respuesta
+[STOP] - Si el mensaje es inapropiado o inseguro
 ` + shouldRespondFooter;
 
 export class NeynarClient extends EventEmitter {
@@ -150,16 +249,20 @@ export class NeynarClient extends EventEmitter {
         const payload = req.body as WebhookPayload;
         
         if (payload.type === 'cast.created') {  
-            await this.handleMention(payload);
-          }
+            if (payload.data.mentioned_profiles.some(profile => profile.fid === this.config.fid)) {
+                await this.handleMention(payload);
+            } else if (payload.data.parent_author?.fid === this.config.fid) {
+                await this.handleReply(payload);
+            }
+        }
         
         res.status(200).json({ status: 'ok' });
       } catch (error) {
-        elizaLogger.error('Error processing mention webhook:', error);
+        elizaLogger.error('Error processing webhook:', error);
         res.status(500).json({ error: 'Internal server error' });
       }
     });
-  }
+}
 
   private async handleMention(payload: WebhookPayload) {
     try {
@@ -182,9 +285,41 @@ export class NeynarClient extends EventEmitter {
         const agentProfile = payload.data.mentioned_profiles.find(
             profile => profile.fid === this.config.fid
         );
+        
+        // Obtener el contexto de la conversación si existe thread_hash
+        let conversationHistory = [];
+        let reactions = null;
+        
+        if (payload.data.thread_hash) {
+            const conversationResponse = await fetch(
+                `https://api.neynar.com/v2/farcaster/cast/conversation?identifier=${payload.data.thread_hash}&type=hash&reply_depth=3&include_chronological_parent_casts=true`,
+                {
+                    headers: {
+                        'accept': 'application/json',
+                        'x-api-key': this.config.apiKey
+                    }
+                }
+            );
+
+            if (conversationResponse.ok) {
+                const conversation = await conversationResponse.json();
+                conversationHistory = [
+                    ...(conversation.conversation.chronological_parent_casts || []),
+                    conversation.conversation.cast,
+                    ...(conversation.conversation.cast.direct_replies || [])
+                ].map(cast => ({
+                    author: cast.author.display_name || cast.author.username,
+                    text: cast.text,
+                    timestamp: cast.timestamp
+                }));
+                reactions = conversation.conversation.cast.reactions;
+            }
+        }
 
         const roomId = stringToUuid(`farcaster-${payload.data.hash}`);
+        elizaLogger.log('Room ID:', roomId);
         const userId = stringToUuid(payload.data.author.username);
+        elizaLogger.log('User ID:', userId);
 
         const memory = {
             id: stringToUuid(payload.data.hash),
@@ -200,7 +335,10 @@ export class NeynarClient extends EventEmitter {
                     parentHash: payload.data.parent_hash,
                     author: payload.data.author,
                     mentions: payload.data.mentioned_profiles,
-                    embeds: payload.data.embeds
+                    embeds: payload.data.embeds,
+                    conversationHistory,
+                    channel: payload.data.channel,
+                    reactions
                 }
             },
             createdAt: Date.now()
@@ -209,8 +347,39 @@ export class NeynarClient extends EventEmitter {
         elizaLogger.log('Creating memory...');
         await this.runtime.messageManager.createMemory(memory);
 
+
         elizaLogger.log('Composing state...');
         const state = await this.runtime.composeState(memory, {
+            platform: "farcaster",
+            platformContext: {
+                isThread: !!payload.data.parent_hash,
+                isReply: !!payload.data.parent_hash,
+                threadContext: payload.data.thread_hash ? "This is part of a thread discussion" : "This is a new conversation",
+                conversationHistory: conversationHistory.map(msg => 
+                    `${msg.author}: ${msg.text}`
+                ).join('\n'),
+                authorInfo: {
+                    username: payload.data.author.username,
+                    displayName: payload.data.author.display_name,
+                    profilePicture: payload.data.author.pfp_url
+                }
+            },
+            messageType: payload.data.parent_hash ? "reply" : "mention",
+            characterContext: {
+                currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
+                interactionStyle: "casual and engaging, keeping responses under 320 characters"
+            },
+            message: payload.data.text,
+            senderName: payload.data.author.username,
+            senderDisplayName: payload.data.author.display_name,
+            actualUsername: agentProfile?.username || 'unknown',
+        });
+
+        console.log('State  1 composed:', state);
+        await this.runtime.evaluate(memory, state);
+
+        elizaLogger.log('Composing state...');
+        const state2 = await this.runtime.composeState(memory, {
             platform: "farcaster",
             platformContext: {
                 isThread: !!payload.data.parent_hash,
@@ -233,11 +402,9 @@ export class NeynarClient extends EventEmitter {
             actualUsername: agentProfile?.username || 'unknown',
         });
 
-        elizaLogger.log('State composed:', state);
-
         elizaLogger.log('Checking if should respond...');
         const shouldRespondContext = composeContext({
-            state,
+            state: state2,
             template: this.runtime.character.templates?.farcasterShouldRespondTemplate || farcasterShouldRespondTemplate
         });
 
@@ -258,10 +425,10 @@ export class NeynarClient extends EventEmitter {
 
         elizaLogger.log('Generating response...');
         const context = composeContext({
-            state,
+            state: state2,
             template: this.runtime.character.templates?.farcasterMessageHandlerTemplate || farcasterMessageTemplate
         });
-
+        console.log('Context:', context);
         const response = await generateMessageResponse({
             runtime: this.runtime,
             context,
@@ -280,6 +447,166 @@ export class NeynarClient extends EventEmitter {
         throw error;
     }
   }
+
+  private async handleReply(payload: WebhookPayload) {
+    try {
+        elizaLogger.log('Manejando respuesta a un cast del agente...');
+
+        // Obtener el contexto completo de la conversación
+        const conversationResponse = await fetch(
+            `https://api.neynar.com/v2/farcaster/cast/conversation?identifier=${payload.data.thread_hash}&type=hash&reply_depth=3&include_chronological_parent_casts=true`,
+            {
+                headers: {
+                    'accept': 'application/json',
+                    'x-api-key': this.config.apiKey
+                }
+            }
+        );
+
+        if (!conversationResponse.ok) {
+            throw new Error('Error obteniendo la conversación');
+        }
+
+        const conversation = await conversationResponse.json();
+        
+        // Construir un historial cronológico de la conversación
+        const conversationHistory = [
+            ...(conversation.conversation.chronological_parent_casts || []),
+            conversation.conversation.cast,
+            ...(conversation.conversation.cast.direct_replies || [])
+        ].map(cast => ({
+            author: cast.author.display_name || cast.author.username,
+            text: cast.text,
+            timestamp: cast.timestamp
+        }));
+        console.log('Conversation history:', conversationHistory);
+        const roomId = stringToUuid(`farcaster-${payload.data.thread_hash}`);
+        elizaLogger.log('Room ID:', roomId);
+        const userId = stringToUuid(payload.data.author.username);
+        elizaLogger.log('User ID:', userId);
+
+        const memory = {
+            id: stringToUuid(payload.data.hash),
+            agentId: this.runtime.agentId,
+            userId,
+            roomId,
+            content: {
+                text: payload.data.text,
+                source: 'farcaster',
+                metadata: {
+                    castHash: payload.data.hash,
+                    threadHash: payload.data.thread_hash,
+                    parentHash: payload.data.parent_hash,
+                    author: payload.data.author,
+                    conversationHistory,
+                    channel: payload.data.channel,
+                    reactions: conversation.conversation.cast.reactions
+                }
+            },
+            createdAt: Date.now()
+        };
+
+        await this.runtime.messageManager.createMemory(memory);
+
+        const state = await this.runtime.composeState(memory, {
+            platform: "farcaster",
+            platformContext: {
+                isThread: true,
+                isReply: true,
+                threadContext: "Continuando una conversación existente",
+                conversationHistory: conversationHistory.map(msg => 
+                    `${msg.author}: ${msg.text}`
+                ).join('\n'),
+                authorInfo: {
+                    username: payload.data.author.username,
+                    displayName: payload.data.author.display_name,
+                    profilePicture: payload.data.author.pfp_url
+                },
+                channelContext: payload.data.channel ? {
+                    name: payload.data.channel.name,
+                    description: payload.data.channel.description
+                } : undefined
+            },
+            messageType: "reply",
+            characterContext: {
+                currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
+                interactionStyle: "conversacional y manteniendo respuestas bajo 320 caracteres",
+                engagement: conversation.conversation.cast.reactions.likes_count > 5 ? "tema de alto interés" : "conversación normal"
+            },
+            message: payload.data.text,
+            senderName: payload.data.author.username,
+            senderDisplayName: payload.data.author.display_name
+        });
+
+        await this.runtime.evaluate(memory, state);
+
+        const state2 = await this.runtime.composeState(memory, {
+            platform: "farcaster",
+            platformContext: {
+                isThread: true,
+                isReply: true,
+                threadContext: "Continuando una conversación existente",
+                conversationHistory: conversationHistory.map(msg => 
+                    `${msg.author}: ${msg.text}`
+                ).join('\n'),
+                authorInfo: {
+                    username: payload.data.author.username,
+                    displayName: payload.data.author.display_name,
+                    profilePicture: payload.data.author.pfp_url
+                },
+                channelContext: payload.data.channel ? {
+                    name: payload.data.channel.name,
+                    description: payload.data.channel.description
+                } : undefined
+            },
+            messageType: "reply",
+            characterContext: {
+                currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
+                interactionStyle: "conversacional y manteniendo respuestas bajo 320 caracteres",
+                engagement: conversation.conversation.cast.reactions.likes_count > 5 ? "tema de alto interés" : "conversación normal"
+            },
+            message: payload.data.text,
+            senderName: payload.data.author.username,
+            senderDisplayName: payload.data.author.display_name
+        });
+
+        const shouldRespondContext = composeContext({
+            state: state2,
+            template: farcasterShouldRespondToReplyTemplate
+        });
+
+        const shouldRespond = await generateShouldRespond({
+            runtime: this.runtime,
+            context: shouldRespondContext,
+            modelClass: ModelClass.SMALL
+        });
+
+        if (shouldRespond !== 'RESPOND') {
+            elizaLogger.log('Omitiendo respuesta al reply...');
+            return;
+        }
+
+        const context = composeContext({
+            state: state2,
+            template: farcasterReplyMessageTemplate
+        });
+        console.log('Context:', context);
+        const response = await generateMessageResponse({
+            runtime: this.runtime,
+            context,
+            modelClass: ModelClass.SMALL
+        });
+
+        if (response?.text) {
+            await this.replyToCast(response.text, payload.data.hash);
+            elizaLogger.success('Respuesta publicada exitosamente');
+        }
+    } catch (error) {
+        elizaLogger.error('Error en handleReply:', error);
+        throw error;
+    }
+}
+
 
   private async replyToCast(text: string, parentHash: string) {
     try {
@@ -308,24 +635,25 @@ export class NeynarClient extends EventEmitter {
 
   private async registerWebhook(webhookUrl: string) {
     try {
-      const response = await fetch('https://api.neynar.com/v2/farcaster/webhook', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'content-type': 'application/json',
-          'x-api-key': this.config.apiKey
-        },
-        body: JSON.stringify({
-          name: `${this.runtime.character.name}-mentions-webhook`,
-          url: `${webhookUrl}/webhook/mentions`,
-          subscription: {
-            "cast.created": {
-              "mentioned_fids": [this.config.fid],
-              "exclude_author_fids": [this.config.fid]
-            }
-          }
-        })
-      });
+        const response = await fetch('https://api.neynar.com/v2/farcaster/webhook', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'content-type': 'application/json',
+                'x-api-key': this.config.apiKey
+            },
+            body: JSON.stringify({
+                name: `${this.runtime.character.name}-webhook`,
+                url: `${webhookUrl}/webhook/mentions`,
+                subscription: {
+                    "cast.created": {
+                        "mentioned_fids": [this.config.fid],
+                        "parent_author_fids": [this.config.fid],
+                        "exclude_author_fids": [this.config.fid]
+                    }
+                }
+            })
+        });
 
       if (!response.ok) {
         const error = await response.json();

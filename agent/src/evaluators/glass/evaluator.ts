@@ -144,6 +144,7 @@ const glassFactEvaluator: Evaluator = {
       });
   
       const text = message.content.text.toLowerCase();
+      console.log('text: '+text)
       const weights = new Map<string, number>();
       const boredomFactor = Math.max(0.3, 1 - (personalityDuration * 0.1)); // Reducido de 0.25 a 0.1
   
