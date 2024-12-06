@@ -23,7 +23,6 @@ import {
   validateCharacterConfig,
 } from "@ai16z/eliza";
 import { bootstrapPlugin } from "@ai16z/plugin-bootstrap";
-import { solanaPlugin } from "@ai16z/plugin-solana";
 import { nodePlugin } from "@ai16z/plugin-node";
 import Database from "better-sqlite3";
 import fs from "fs";
@@ -34,12 +33,9 @@ import { fileURLToPath } from "url";
 import { character } from "./character.ts";
 import type { DirectClient } from "@ai16z/client-direct";
 import timeProvider from "./providers/timeProvider.ts";
-import customProvider from "./providers/customProvider.ts";
-import insultsProvider from "./providers/insultsProvider.ts";
-import transferTokensAction from "./custom_actions/transferTokens.ts";
 import evmPlugin from "./plugin-evm/src/index.ts";
-import { boredomProvider } from "./providers/boredom.ts";
 import { livestreamGeneration } from "./custom_actions/livestream.ts";
+import NeynarClientInterface from "./clients/neynar-client.ts";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -194,6 +190,11 @@ export async function initializeClients(
     clients.push(twitterClients);
   }
 
+  if (clientTypes.includes("farcaster")) {
+    const farcasterClient = await NeynarClientInterface.start(runtime);
+    if (farcasterClient) clients.push(farcasterClient);
+  }
+
   if (character.plugins?.length > 0) {
     for (const plugin of character.plugins) {
       if (plugin.clients) {
@@ -237,8 +238,8 @@ export function createAgent(
         ? evmPlugin
         : null,
     ].filter(Boolean),
-    providers: [timeProvider, insultsProvider],
-    actions: [transferTokensAction, livestreamGeneration],
+    providers: [timeProvider],
+    actions: [livestreamGeneration],
     services: [],
     managers: [],
     cacheManager: cache,
