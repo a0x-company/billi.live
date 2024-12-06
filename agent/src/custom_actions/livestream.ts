@@ -113,6 +113,15 @@ export const livestreamGeneration: Action = {
       !parsedDetails.tokenSymbol
     ) {
       elizaLogger.log("Details are missing, asking for more information...");
+      const messageIncompleteDetails = await generateText({
+        runtime: _runtime,
+        context: `The details provided are incorrect. Please provide a handle, title, description and token symbol for create a your livestream. IMPORTANT: SHORT RESPONSES, NO EXTRA TEXT.`,
+        modelClass: ModelClass.SMALL,
+        stop: ["\n"],
+      });
+      callback({
+        text: messageIncompleteDetails,
+      });
       return false;
     }
 
