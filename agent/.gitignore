@@ -1,4 +1,5 @@
 .env
+!node_modules/@ai16z/eliza
 node_modules
 package-lock.json
 dist/src

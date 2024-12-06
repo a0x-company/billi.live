@@ -9,7 +9,7 @@ import {
   State,
 } from "@ai16z/eliza";
 
-const livestreamUrl = "https://billi-live.vercel.app";
+const livestreamUrl = "https://billi.live";
 const API_URL = process.env.API_URL;
 
 const createLivestream = async ({
