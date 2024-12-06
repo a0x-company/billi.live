@@ -12,7 +12,9 @@ export async function GET(req: Request) {
     const response = await axios.post(
       `http://localhost:3000/${agentId}/message`,
       //   `https://041d-2800-300-6272-f6b0-d12c-8c4c-543b-6c7d.ngrok-free.app/${agentId}/message`,
-      { text: "Introduce yourself in an interesting way" }
+      {
+        text: "Introduce yourself in an interesting way in english",
+      }
     );
 
     const responseData = response.data;
