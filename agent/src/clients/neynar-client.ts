@@ -63,15 +63,15 @@ Intereses actuales: {{topic}}
 # Contexto de la Mención
 Plataforma: {{platform}}
 Tipo: {{messageType}}
-Canal: {{platformContext.channelContext.name}}
-Descripción del canal: {{platformContext.channelContext.description}}
+Canal: {{channelName}}
+Descripción del canal: {{channelDescription}}
 
 # Mensaje Actual
-De: {{senderName}} ({{platformContext.authorInfo.displayName}})
+De: {{senderName}} ({{authorDisplayName}})
 Mensaje: {{message}}
 
 # Hilo de Conversación
-{{platformContext.conversationHistory}}
+{{conversationHistory}}
 
 # Contexto de Conocimiento
 {{knowledge}}
@@ -93,34 +93,34 @@ Acciones disponibles:
 ` + messageCompletionFooter;
 
 const farcasterShouldRespondTemplate = `
-# About {{agentName}}
+# Sobre {{agentName}}
 {{bio}}
 {{adjective}}
 
-# Current Interaction
-Type: {{messageType}}
-Platform: {{platform}}
-Thread Context: {{platformContext.threadContext}}
-Is Reply: {{platformContext.isReply}}
-Channel: {{platformContext.channelContext.name}}
-Channel Description: {{platformContext.channelContext.description}}
+# Contexto Actual
+Tipo: {{messageType}}
+Plataforma: {{platform}}
+Estado del hilo: {{threadContext}}
+Es respuesta: {{isReply}}
+Canal: {{channelName}}
+Descripción del canal: {{channelDescription}}
 
-# Conversation Context
-Recent messages:
+# Contexto de Conversación
+Mensajes recientes:
 {{recentMessages}}
 
-# Message Info
-Sender: {{senderName}} ({{senderDisplayName}})
-Message: {{message}}
-Current Farcaster Username: {{actualUsername}}
+# Información del Mensaje
+Remitente: {{senderName}} ({{authorDisplayName}})
+Mensaje: {{message}}
+Usuario actual en Farcaster: {{actualUsername}}
 
-# Instructions
-Choose whether to respond based on:
-1. Is the message appropriate?
-2. Does it require a response?
-3. Is the tone and content suitable for interaction?
+# Instrucciones
+Decide si responder basado en:
+1. ¿Es el mensaje apropiado?
+2. ¿Requiere una respuesta?
+3. ¿El tono y contenido son adecuados para la interacción?
 
-Response options are [RESPOND], [IGNORE] and [STOP].
+Las opciones de respuesta son [RESPOND], [IGNORE] y [STOP].
 ` + shouldRespondFooter;
 
 const farcasterReplyMessageTemplate = `
@@ -134,11 +134,11 @@ const farcasterReplyMessageTemplate = `
 Intereses actuales: {{topic}}
 
 # Mensaje Actual
-De: {{senderName}} ({{platformContext.authorInfo.displayName}})
+De: {{senderName}} ({{authorDisplayName}})
 Mensaje: {{message}}
 
 # Hilo de Conversación
-{{platformContext.conversationHistory}}
+{{conversationHistory}}
 
 # Contexto de Conocimiento
 {{knowledge}}
@@ -167,30 +167,27 @@ const farcasterShouldRespondToReplyTemplate = `
 # Contexto de la Plataforma
 Plataforma: {{platform}}
 Tipo: {{messageType}}
-Estado del hilo: {{platformContext.isThread ? "Conversación en hilo" : "Nueva conversación"}}
-Canal: {{platformContext.channelContext.name}}
-Tema del canal: {{platformContext.channelContext.description}}
-Nivel de engagement: {{characterContext.engagement}}
+Estado del hilo: {{isThread}}
+Canal: {{channelName}}
+Tema del canal: {{channelDescription}}
+Nivel de engagement: {{engagement}}
 
 # Contexto de Conversación
-Interacciones previas con este usuario:
-{{recentMessageInteractions}}
-
-Contexto del hilo: {{platformContext.threadContext}}
-Mensajes recientes:
-{{platformContext.conversationHistory}}
+Interacciones previas con este usuario: {{recentMessageInteractions}}
+Contexto del hilo: {{threadContext}}
+Mensajes recientes: {{conversationHistory}}
 
 # Información del Mensaje
-Remitente: {{senderName}} ({{platformContext.authorInfo.displayName}})
-Perfil: {{platformContext.authorInfo.username}}
-Foto de perfil: {{platformContext.authorInfo.profilePicture}}
+Remitente: {{senderName}} ({{authorDisplayName}})
+Perfil: {{authorUsername}}
+Foto de perfil: {{authorProfilePicture}}
 Mensaje: {{message}}
-Likes en la conversación: {{content.metadata.reactions.likes_count}}
-Nombre de usuario actual en Farcaster: {{actualUsername}}
+Likes en la conversación: {{likesCount}}
+Usuario actual en Farcaster: {{actualUsername}}
 
 # Estado del Agente
-Estado de ánimo actual: {{characterContext.currentMood}}
-Estilo de interacción: {{characterContext.interactionStyle}}
+Estado de ánimo actual: {{currentMood}}
+Estilo de interacción: {{interactionStyle}}
 
 # Instrucciones
 Decide si responder basado en:
@@ -199,7 +196,7 @@ Decide si responder basado en:
 3. ¿Es relevante para {{agentName}} y el contexto del canal?
 4. ¿El tono y contenido son adecuados para la interacción?
 5. ¿Hay suficiente contexto para dar una respuesta significativa?
-6. ¿El nivel de engagement ({{characterContext.engagement}}) justifica una respuesta?
+6. ¿El nivel de engagement ({{engagement}}) justifica una respuesta?
 
 Opciones de respuesta son:
 [RESPOND] - Si el mensaje merece engagement
@@ -224,12 +221,12 @@ export class NeynarClient extends EventEmitter {
     this.app = express();
     this.setupMiddleware();
     this.setupWebhookEndpoint();
-    this.setupSignalHandlers(); 
+    this.setupSignalHandlers();
   }
 
   private setupSignalHandlers() {
     const cleanup = async () => {
-      elizaLogger.log('Cleaning up before exit...');
+      elizaLogger.log('Limpiando antes de salir...');
       await this.stop();
       process.exit(0);
     };
@@ -249,46 +246,40 @@ export class NeynarClient extends EventEmitter {
         const payload = req.body as WebhookPayload;
         
         if (payload.type === 'cast.created') {  
-            if (payload.data.mentioned_profiles.some(profile => profile.fid === this.config.fid)) {
-                await this.handleMention(payload);
-            } else if (payload.data.parent_author?.fid === this.config.fid) {
-                await this.handleReply(payload);
-            }
+          if (payload.data.mentioned_profiles.some(profile => profile.fid === this.config.fid)) {
+            await this.handleMention(payload);
+          } else if (payload.data.parent_author?.fid === this.config.fid) {
+            await this.handleReply(payload);
+          }
         }
         
         res.status(200).json({ status: 'ok' });
       } catch (error) {
-        elizaLogger.error('Error processing webhook:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        elizaLogger.error('Error procesando webhook:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
       }
     });
-}
+  }
 
   private async handleMention(payload: WebhookPayload) {
     try {
-        elizaLogger.log('Handling mention from Farcaster...');
+        elizaLogger.log('Manejando mención de Farcaster...');
         
-        // Verificación técnica por FID
         const wasAgentMentioned = payload.data.mentioned_profiles.some(
             profile => profile.fid === this.config.fid
         );
         
-        elizaLogger.log(`Agent FID: ${this.config.fid}`);
-        elizaLogger.log('Was agent mentioned?', wasAgentMentioned);
-
         if (!wasAgentMentioned) {
-            elizaLogger.log('Agent not mentioned, skipping...');
+            elizaLogger.log('Agente no mencionado, omitiendo...');
             return;
         }
 
-        // Obtener el username actual en Farcaster
         const agentProfile = payload.data.mentioned_profiles.find(
             profile => profile.fid === this.config.fid
         );
         
-        // Obtener el contexto de la conversación si existe thread_hash
         let conversationHistory = [];
-        let reactions = null;
+        let conversation = null;
         
         if (payload.data.thread_hash) {
             const conversationResponse = await fetch(
@@ -302,7 +293,7 @@ export class NeynarClient extends EventEmitter {
             );
 
             if (conversationResponse.ok) {
-                const conversation = await conversationResponse.json();
+                conversation = await conversationResponse.json();
                 conversationHistory = [
                     ...(conversation.conversation.chronological_parent_casts || []),
                     conversation.conversation.cast,
@@ -312,14 +303,11 @@ export class NeynarClient extends EventEmitter {
                     text: cast.text,
                     timestamp: cast.timestamp
                 }));
-                reactions = conversation.conversation.cast.reactions;
             }
         }
 
         const roomId = stringToUuid(`farcaster-${payload.data.hash}`);
-        elizaLogger.log('Room ID:', roomId);
         const userId = stringToUuid(payload.data.author.username);
-        elizaLogger.log('User ID:', userId);
 
         const memory = {
             id: stringToUuid(payload.data.hash),
@@ -338,77 +326,65 @@ export class NeynarClient extends EventEmitter {
                     embeds: payload.data.embeds,
                     conversationHistory,
                     channel: payload.data.channel,
-                    reactions
+                    reactions: conversation?.conversation?.cast?.reactions
                 }
             },
             createdAt: Date.now()
         };
 
-        elizaLogger.log('Creating memory...');
         await this.runtime.messageManager.createMemory(memory);
 
-
-        elizaLogger.log('Composing state...');
+        // Primer estado para evaluación inicial
         const state = await this.runtime.composeState(memory, {
             platform: "farcaster",
-            platformContext: {
-                isThread: !!payload.data.parent_hash,
-                isReply: !!payload.data.parent_hash,
-                threadContext: payload.data.thread_hash ? "This is part of a thread discussion" : "This is a new conversation",
-                conversationHistory: conversationHistory.map(msg => 
-                    `${msg.author}: ${msg.text}`
-                ).join('\n'),
-                authorInfo: {
-                    username: payload.data.author.username,
-                    displayName: payload.data.author.display_name,
-                    profilePicture: payload.data.author.pfp_url
-                }
-            },
             messageType: payload.data.parent_hash ? "reply" : "mention",
-            characterContext: {
-                currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
-                interactionStyle: "casual and engaging, keeping responses under 320 characters"
-            },
+            isThread: !!payload.data.parent_hash,
+            isReply: !!payload.data.parent_hash,
+            threadContext: payload.data.thread_hash ? "Continuando una conversación existente" : "Nueva conversación",
+            conversationHistory: conversationHistory.map(msg => 
+                `${msg.author}: ${msg.text}`
+            ).join('\n'),
+            channelName: payload.data.channel?.name || '',
+            channelDescription: payload.data.channel?.description || '',
+            authorUsername: payload.data.author.username,
+            authorDisplayName: payload.data.author.display_name,
+            authorProfilePicture: payload.data.author.pfp_url,
             message: payload.data.text,
             senderName: payload.data.author.username,
-            senderDisplayName: payload.data.author.display_name,
-            actualUsername: agentProfile?.username || 'unknown',
+            currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
+            interactionStyle: "conversacional y manteniendo respuestas bajo 320 caracteres",
+            actualUsername: agentProfile?.username || 'unknown'
         });
 
-        console.log('State  1 composed:', state);
+        // Primera evaluación para actualizar la personalidad
         await this.runtime.evaluate(memory, state);
 
-        elizaLogger.log('Composing state...');
+        // Segundo estado para la respuesta
         const state2 = await this.runtime.composeState(memory, {
             platform: "farcaster",
-            platformContext: {
-                isThread: !!payload.data.parent_hash,
-                isReply: !!payload.data.parent_hash,
-                threadContext: payload.data.thread_hash ? "This is part of a thread discussion" : "This is a new conversation",
-                authorInfo: {
-                    username: payload.data.author.username,
-                    displayName: payload.data.author.display_name,
-                    profilePicture: payload.data.author.pfp_url
-                }
-            },
             messageType: payload.data.parent_hash ? "reply" : "mention",
-            characterContext: {
-                currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
-                interactionStyle: "casual and engaging, keeping responses under 320 characters"
-            },
+            isThread: !!payload.data.parent_hash,
+            isReply: !!payload.data.parent_hash,
+            threadContext: payload.data.thread_hash ? "Continuando una conversación existente" : "Nueva conversación",
+            conversationHistory: conversationHistory.map(msg => 
+                `${msg.author}: ${msg.text}`
+            ).join('\n'),
+            channelName: payload.data.channel?.name || '',
+            channelDescription: payload.data.channel?.description || '',
+            authorUsername: payload.data.author.username,
+            authorDisplayName: payload.data.author.display_name,
+            authorProfilePicture: payload.data.author.pfp_url,
             message: payload.data.text,
             senderName: payload.data.author.username,
-            senderDisplayName: payload.data.author.display_name,
-            actualUsername: agentProfile?.username || 'unknown',
+            currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
+            interactionStyle: "conversacional y manteniendo respuestas bajo 320 caracteres",
+            actualUsername: agentProfile?.username || 'unknown'
         });
 
-        elizaLogger.log('Checking if should respond...');
         const shouldRespondContext = composeContext({
             state: state2,
             template: this.runtime.character.templates?.farcasterShouldRespondTemplate || farcasterShouldRespondTemplate
         });
-
-        elizaLogger.log('Should respond context:', shouldRespondContext);
 
         const shouldRespond = await generateShouldRespond({
             runtime: this.runtime,
@@ -416,19 +392,16 @@ export class NeynarClient extends EventEmitter {
             modelClass: ModelClass.SMALL
         });
 
-        elizaLogger.log(`Should respond: ${shouldRespond}`);
-
         if (shouldRespond !== 'RESPOND') {
-            elizaLogger.log('Skipping response...');
+            elizaLogger.log('Omitiendo respuesta...');
             return;
         }
 
-        elizaLogger.log('Generating response...');
         const context = composeContext({
             state: state2,
             template: this.runtime.character.templates?.farcasterMessageHandlerTemplate || farcasterMessageTemplate
         });
-        console.log('Context:', context);
+
         const response = await generateMessageResponse({
             runtime: this.runtime,
             context,
@@ -436,23 +409,19 @@ export class NeynarClient extends EventEmitter {
         });
 
         if (response?.text) {
-            elizaLogger.log('Posting reply to Farcaster...');
             await this.replyToCast(response.text, payload.data.hash);
-            elizaLogger.success('Reply posted successfully');
-        } else {
-            elizaLogger.error('No response text generated');
+            elizaLogger.success('Respuesta publicada exitosamente');
         }
     } catch (error) {
-        elizaLogger.error('Error in handleMention:', error);
+        elizaLogger.error('Error en handleMention:', error);
         throw error;
     }
-  }
+}
 
-  private async handleReply(payload: WebhookPayload) {
+private async handleReply(payload: WebhookPayload) {
     try {
         elizaLogger.log('Manejando respuesta a un cast del agente...');
 
-        // Obtener el contexto completo de la conversación
         const conversationResponse = await fetch(
             `https://api.neynar.com/v2/farcaster/cast/conversation?identifier=${payload.data.thread_hash}&type=hash&reply_depth=3&include_chronological_parent_casts=true`,
             {
@@ -469,7 +438,6 @@ export class NeynarClient extends EventEmitter {
 
         const conversation = await conversationResponse.json();
         
-        // Construir un historial cronológico de la conversación
         const conversationHistory = [
             ...(conversation.conversation.chronological_parent_casts || []),
             conversation.conversation.cast,
@@ -479,11 +447,9 @@ export class NeynarClient extends EventEmitter {
             text: cast.text,
             timestamp: cast.timestamp
         }));
-        console.log('Conversation history:', conversationHistory);
+
         const roomId = stringToUuid(`farcaster-${payload.data.thread_hash}`);
-        elizaLogger.log('Room ID:', roomId);
         const userId = stringToUuid(payload.data.author.username);
-        elizaLogger.log('User ID:', userId);
 
         const memory = {
             id: stringToUuid(payload.data.hash),
@@ -508,66 +474,55 @@ export class NeynarClient extends EventEmitter {
 
         await this.runtime.messageManager.createMemory(memory);
 
+        // Primer estado para evaluación inicial
         const state = await this.runtime.composeState(memory, {
             platform: "farcaster",
-            platformContext: {
-                isThread: true,
-                isReply: true,
-                threadContext: "Continuando una conversación existente",
-                conversationHistory: conversationHistory.map(msg => 
-                    `${msg.author}: ${msg.text}`
-                ).join('\n'),
-                authorInfo: {
-                    username: payload.data.author.username,
-                    displayName: payload.data.author.display_name,
-                    profilePicture: payload.data.author.pfp_url
-                },
-                channelContext: payload.data.channel ? {
-                    name: payload.data.channel.name,
-                    description: payload.data.channel.description
-                } : undefined
-            },
             messageType: "reply",
-            characterContext: {
-                currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
-                interactionStyle: "conversacional y manteniendo respuestas bajo 320 caracteres",
-                engagement: conversation.conversation.cast.reactions.likes_count > 5 ? "tema de alto interés" : "conversación normal"
-            },
+            isThread: true,
+            isReply: true,
+            threadContext: "Continuando una conversación existente",
+            conversationHistory: conversationHistory.map(msg => 
+                `${msg.author}: ${msg.text}`
+            ).join('\n'),
+            channelName: payload.data.channel?.name || '',
+            channelDescription: payload.data.channel?.description || '',
+            authorUsername: payload.data.author.username,
+            authorDisplayName: payload.data.author.display_name,
+            authorProfilePicture: payload.data.author.pfp_url,
             message: payload.data.text,
             senderName: payload.data.author.username,
-            senderDisplayName: payload.data.author.display_name
+            currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
+            interactionStyle: "conversacional y manteniendo respuestas bajo 320 caracteres",
+            engagement: conversation.conversation.cast.reactions.likes_count > 5 ? "tema de alto interés" : "conversación normal",
+            likesCount: conversation.conversation.cast.reactions.likes_count || 0,
+            actualUsername: payload.data.author.username
         });
 
+        // Primera evaluación para actualizar la personalidad
         await this.runtime.evaluate(memory, state);
 
+        // Segundo estado para la respuesta
         const state2 = await this.runtime.composeState(memory, {
             platform: "farcaster",
-            platformContext: {
-                isThread: true,
-                isReply: true,
-                threadContext: "Continuando una conversación existente",
-                conversationHistory: conversationHistory.map(msg => 
-                    `${msg.author}: ${msg.text}`
-                ).join('\n'),
-                authorInfo: {
-                    username: payload.data.author.username,
-                    displayName: payload.data.author.display_name,
-                    profilePicture: payload.data.author.pfp_url
-                },
-                channelContext: payload.data.channel ? {
-                    name: payload.data.channel.name,
-                    description: payload.data.channel.description
-                } : undefined
-            },
             messageType: "reply",
-            characterContext: {
-                currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
-                interactionStyle: "conversacional y manteniendo respuestas bajo 320 caracteres",
-                engagement: conversation.conversation.cast.reactions.likes_count > 5 ? "tema de alto interés" : "conversación normal"
-            },
+            isThread: true,
+            isReply: true,
+            threadContext: "Continuando una conversación existente",
+            conversationHistory: conversationHistory.map(msg => 
+                `${msg.author}: ${msg.text}`
+            ).join('\n'),
+            channelName: payload.data.channel?.name || '',
+            channelDescription: payload.data.channel?.description || '',
+            authorUsername: payload.data.author.username,
+            authorDisplayName: payload.data.author.display_name,
+            authorProfilePicture: payload.data.author.pfp_url,
             message: payload.data.text,
             senderName: payload.data.author.username,
-            senderDisplayName: payload.data.author.display_name
+            currentMood: this.runtime.character.adjectives[Math.floor(Math.random() * this.runtime.character.adjectives.length)],
+            interactionStyle: "conversacional y manteniendo respuestas bajo 320 caracteres",
+            engagement: conversation.conversation.cast.reactions.likes_count > 5 ? "tema de alto interés" : "conversación normal",
+            likesCount: conversation.conversation.cast.reactions.likes_count || 0,
+            actualUsername: payload.data.author.username
         });
 
         const shouldRespondContext = composeContext({
@@ -590,7 +545,7 @@ export class NeynarClient extends EventEmitter {
             state: state2,
             template: farcasterReplyMessageTemplate
         });
-        console.log('Context:', context);
+
         const response = await generateMessageResponse({
             runtime: this.runtime,
             context,
@@ -606,7 +561,6 @@ export class NeynarClient extends EventEmitter {
         throw error;
     }
 }
-
 
   private async replyToCast(text: string, parentHash: string) {
     try {
@@ -626,47 +580,47 @@ export class NeynarClient extends EventEmitter {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(`Error posting reply: ${JSON.stringify(error)}`);
+        throw new Error(`Error publicando respuesta: ${JSON.stringify(error)}`);
       }
     } catch (error) {
-      elizaLogger.error('Error posting reply to Farcaster:', error);
+      elizaLogger.error('Error publicando respuesta en Farcaster:', error);
     }
   }
 
   private async registerWebhook(webhookUrl: string) {
     try {
-        const response = await fetch('https://api.neynar.com/v2/farcaster/webhook', {
-            method: 'POST',
-            headers: {
-                'accept': 'application/json',
-                'content-type': 'application/json',
-                'x-api-key': this.config.apiKey
-            },
-            body: JSON.stringify({
-                name: `${this.runtime.character.name}-webhook`,
-                url: `${webhookUrl}/webhook/mentions`,
-                subscription: {
-                    "cast.created": {
-                        "mentioned_fids": [this.config.fid],
-                        "parent_author_fids": [this.config.fid],
-                        "exclude_author_fids": [this.config.fid]
-                    }
-                }
-            })
-        });
+      const response = await fetch('https://api.neynar.com/v2/farcaster/webhook', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'content-type': 'application/json',
+          'x-api-key': this.config.apiKey
+        },
+        body: JSON.stringify({
+          name: `${this.runtime.character.name}-webhook`,
+          url: `${webhookUrl}/webhook/mentions`,
+          subscription: {
+            "cast.created": {
+              "mentioned_fids": [this.config.fid],
+              "parent_author_fids": [this.config.fid],
+              "exclude_author_fids": [this.config.fid]
+            }
+          }
+        })
+      });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(`Error registering webhook: ${JSON.stringify(error)}`);
+        throw new Error(`Error registrando webhook: ${JSON.stringify(error)}`);
       }
 
       const data = await response.json();
       this.webhookId = data.webhook.webhook_id;
-      elizaLogger.success(`Webhook registered with ID: ${this.webhookId}`);
+      elizaLogger.success(`Webhook registrado con ID: ${this.webhookId}`);
       
       this.webhookSecret = data.webhook.secrets[0]?.value;
     } catch (error) {
-      elizaLogger.error('Error registering Neynar webhook:', error);
+      elizaLogger.error('Error registrando webhook de Neynar:', error);
       throw error;
     }
   }
@@ -677,7 +631,7 @@ export class NeynarClient extends EventEmitter {
         await ngrok.kill();
         
         this.app.listen(this.port, async () => {
-          elizaLogger.success(`Neynar webhook server running on port ${this.port}`);
+          elizaLogger.success(`Servidor webhook de Neynar ejecutándose en puerto ${this.port}`);
           
           try {
             await ngrok.authtoken(process.env.NGROK_AUTH_TOKEN);
@@ -689,10 +643,10 @@ export class NeynarClient extends EventEmitter {
 
             await this.registerWebhook(this.ngrokUrl);
             
-            elizaLogger.success(`Neynar webhook URL: ${this.ngrokUrl}/webhook/mentions`);
+            elizaLogger.success(`URL del webhook de Neynar: ${this.ngrokUrl}/webhook/mentions`);
             resolve();
           } catch (ngrokError) {
-            elizaLogger.error('Error starting ngrok:', ngrokError);
+            elizaLogger.error('Error iniciando ngrok:', ngrokError);
             reject(ngrokError);
           }
         });
@@ -703,11 +657,11 @@ export class NeynarClient extends EventEmitter {
   }
 
   async stop(): Promise<void> {
-    elizaLogger.log('Stopping Neynar client...');
+    elizaLogger.log('Deteniendo cliente de Neynar...');
     
     if (this.webhookId) {
       try {
-        elizaLogger.log(`Deleting webhook ${this.webhookId}...`);
+        elizaLogger.log(`Eliminando webhook ${this.webhookId}...`);
         const response = await fetch(`https://api.neynar.com/v2/farcaster/webhook/${this.webhookId}`, {
           method: 'DELETE',
           headers: {
@@ -719,24 +673,24 @@ export class NeynarClient extends EventEmitter {
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(`Error deleting webhook: ${JSON.stringify(error)}`);
+          throw new Error(`Error eliminando webhook: ${JSON.stringify(error)}`);
         }
 
-        elizaLogger.success('Webhook deleted successfully');
+        elizaLogger.success('Webhook eliminado exitosamente');
       } catch (error) {
-        elizaLogger.error('Error deleting Neynar webhook:', error);
+        elizaLogger.error('Error eliminando webhook de Neynar:', error);
       }
     }
 
     if (this.ngrokUrl) {
       try {
-        elizaLogger.log('Disconnecting ngrok...');
+        elizaLogger.log('Desconectando ngrok...');
         await ngrok.disconnect();
         await ngrok.kill();
         this.ngrokUrl = null;
-        elizaLogger.success('Ngrok disconnected successfully');
+        elizaLogger.success('Ngrok desconectado exitosamente');
       } catch (error) {
-        elizaLogger.error('Error disconnecting ngrok:', error);
+        elizaLogger.error('Error desconectando ngrok:', error);
       }
     }
   }
@@ -748,7 +702,7 @@ export const NeynarClientInterface = {
     const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
     
     if (missingEnvVars.length > 0) {
-      throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+      throw new Error(`Faltan variables de entorno requeridas: ${missingEnvVars.join(', ')}`);
     }
 
     const config: NeynarConfig = {
@@ -757,14 +711,14 @@ export const NeynarClientInterface = {
       fid: parseInt(process.env.NEYNAR_AGENT_FID!)
     };
 
-    elizaLogger.log('Starting Neynar client');
+    elizaLogger.log('Iniciando cliente de Neynar');
     const client = new NeynarClient(runtime, config);
     await client.start();
     return client;
   },
 
   stop: async (client: NeynarClient) => {
-    elizaLogger.log('Stopping Neynar client');
+    elizaLogger.log('Deteniendo cliente de Neynar');
     await client.stop();
   }
 };
