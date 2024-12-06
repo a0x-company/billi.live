@@ -1,12 +1,12 @@
+// next
 import Image from "next/image";
-
-// icons
-import { PiChartLineUpBold } from "react-icons/pi";
-import { PiTelevisionSimpleFill } from "react-icons/pi";
 
 // components
 import { BilliPresentation } from "@/components/landing/BilliPresentation";
 import { LiveChannels } from "@/components/landing/LiveChannels";
+
+// icons
+import { PiChartLineUpBold } from "react-icons/pi";
 
 export default function Home() {
   return (
@@ -86,7 +86,7 @@ export default function Home() {
             <footer className="bg-black/80 backdrop-blur-sm border-t border-white/10 py-4">
               <div className="container mx-auto px-4">
                 <div className="flex items-center justify-center space-x-6">
-                  <div className="flex flex-row gap-[5px] max-md:w-1/3 items-center justify-center">
+                  {/* <div className="flex flex-row gap-[5px] max-md:w-1/3 items-center justify-center">
                     <div className="text-white">
                       <PiTelevisionSimpleFill style={{ color: "inherit" }} />
                     </div>
@@ -99,11 +99,13 @@ export default function Home() {
                     >
                       Vision
                     </a>
-                  </div>
+                  </div> */}
 
                   <div className="flex flex-row gap-[5px] max-md:w-1/3 items-center justify-center">
                     <div className="text-white">
-                      <PiChartLineUpBold style={{ color: "inherit" }} />
+                      <PiChartLineUpBold
+                        style={{ color: "inherit", fontSize: "20px" }}
+                      />
                     </div>
 
                     <a

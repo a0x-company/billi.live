@@ -1,15 +1,26 @@
+"use client";
+
 import Image from "next/image";
 
+import { useRouter } from "next/navigation";
+
 export function LiveChannels() {
+  const router = useRouter();
+
   return (
     <div className="w-full px-6 py-8">
       <h2 className="text-xl font-semibold text-white mb-4">
-        Live channels we think you&apos;ll like
+        Live channels I think you&apos;ll like
       </h2>
 
       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-        <div className="flex-none w-80">
-          <div className="relative group">
+        <div
+          className="flex-none w-80 cursor-pointer"
+          onClick={() =>
+            router.push(`/token/0x33a2c4a426a4e866def7996ffa93fbee6d397eb8`)
+          }
+        >
+          <div className="relative group transition-transform duration-300 ease-out hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20">
             <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-2 py-1 rounded">
               <p className="font-black">LIVE</p>
             </div>
@@ -45,8 +56,13 @@ export function LiveChannels() {
           </div>
         </div>
 
-        <div className="flex-none w-80">
-          <div className="relative group">
+        <div
+          className="flex-none w-80 cursor-pointer"
+          onClick={() =>
+            router.push(`/token/0x1bc0c42215582d5a085795f4badbac3ff36d1bcb`)
+          }
+        >
+          <div className="relative group transition-transform duration-300 ease-out hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20">
             <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-2 py-1 rounded">
               <p className="font-black">LIVE</p>
             </div>
