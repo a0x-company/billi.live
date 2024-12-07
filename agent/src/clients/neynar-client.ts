@@ -440,16 +440,34 @@ export class NeynarClient extends EventEmitter {
         context,
         modelClass: ModelClass.SMALL,
       });
+
       const callback = async (content: any) => {
         const reply = await this.replyToCast(content.text, payload.data.hash);
-        return reply ? [reply] : [];
+
+        if (reply) {
+          const memory = {
+            id: reply.id,
+            userId: this.runtime.agentId,
+            agentId: this.runtime.agentId,
+            roomId: reply.roomId,
+            content: {
+              text: content.text,
+              action: content.action,
+            },
+            createdAt: Date.now(),
+          };
+
+          await this.runtime.messageManager.createMemory(memory);
+          return [memory];
+        }
+
+        return [];
       };
+
       if (response?.text) {
         const responseMemories = await callback(response);
-        elizaLogger.success("Respuesta publicada exitosamente");
 
-        // Procesar acciones después de enviar la respuesta
-        if (responseMemories.length > 0) {
+        if (response.text.length > 0) {
           await this.runtime.processActions(
             memory,
             responseMemories,
@@ -457,6 +475,8 @@ export class NeynarClient extends EventEmitter {
             callback
           );
         }
+
+        elizaLogger.success("Respuesta publicada exitosamente");
       }
     } catch (error) {
       elizaLogger.error("Error en handleMention:", error);
