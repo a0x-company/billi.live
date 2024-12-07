@@ -9,7 +9,7 @@ import {
   State,
 } from "@ai16z/eliza";
 
-const livestreamUrl = "https://billi-live.vercel.app";
+const livestreamUrl = "https://billi.live";
 const API_URL = process.env.API_URL;
 
 const createLivestream = async ({
@@ -51,16 +51,16 @@ const getRandomTokenAddress = () => {
 };
 
 export const livestreamGeneration: Action = {
-  name: "GENERATE_LIVESTREAM_LINK",
+  name: "GENERATE_LIVESTREAM",
   similes: [
-    "LIVESTREAM_LINK",
+    "LIVESTREAM",
     "CREATE_LIVESTREAM",
     "HOST_LIVESTREAM",
     "START_LIVESTREAM",
     "START_STREAM",
     "START_LIVE",
   ],
-  description: "Always help the user create to start a livestream.",
+  description: "Always help the user create a livestream.",
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
@@ -113,15 +113,15 @@ export const livestreamGeneration: Action = {
       !parsedDetails.tokenSymbol
     ) {
       elizaLogger.log("Details are missing, asking for more information...");
-      const messageIncompleteDetails = await generateText({
-        runtime: _runtime,
-        context: `The details provided are incorrect. Please provide a handle, title, description and token symbol for create a your livestream. IMPORTANT: SHORT RESPONSES, NO EXTRA TEXT.`,
-        modelClass: ModelClass.SMALL,
-        stop: ["\n"],
-      });
-      callback({
-        text: messageIncompleteDetails,
-      });
+      // const messageIncompleteDetails = await generateText({
+      //   runtime: _runtime,
+      //   context: `The details provided are incorrect. Please provide a handle, title, description and token symbol for create a your livestream. IMPORTANT: SHORT RESPONSES, NO EXTRA TEXT.`,
+      //   modelClass: ModelClass.SMALL,
+      //   stop: ["\n"],
+      // });
+      // callback({
+      //   text: messageIncompleteDetails,
+      // });
       return false;
     }
 
@@ -157,7 +157,7 @@ export const livestreamGeneration: Action = {
       {
         user: "{{agentName}}",
         content: {
-          text: "Please provide a handle, title, description, and token symbol.",
+          text: "Please provide a title, description, and token symbol.",
           action: "GENERATE_LIVESTREAM_LINK",
         },
       },
@@ -176,7 +176,7 @@ export const livestreamGeneration: Action = {
       {
         user: "{{agentName}}",
         content: {
-          text: "Por favor, proporciona un handle, título, descripción y símbolo de token.",
+          text: "Por favor, proporciona un título, descripción y símbolo de token.",
           action: "GENERATE_LIVESTREAM_LINK",
         },
       },
