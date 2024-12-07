@@ -407,11 +407,24 @@ export class NeynarClient extends EventEmitter {
             context,
             modelClass: ModelClass.SMALL
         });
-
-        if (response?.text) {
-            await this.replyToCast(response.text, payload.data.hash);
-            elizaLogger.success('Respuesta publicada exitosamente');
+        const callback = async (content: any) => {
+          const reply= await this.replyToCast(content.text, payload.data.hash);
+          return reply ? [reply] : [];
+      };
+      if (response?.text) {
+        const responseMemories = await callback(response);
+        elizaLogger.success('Respuesta publicada exitosamente');
+        
+        // Procesar acciones después de enviar la respuesta
+        if (responseMemories.length > 0) {
+            await this.runtime.processActions(
+                memory,
+                responseMemories,
+                state2,
+                callback
+            );
         }
+    }
     } catch (error) {
         elizaLogger.error('Error en handleMention:', error);
         throw error;
@@ -552,9 +565,26 @@ private async handleReply(payload: WebhookPayload) {
             modelClass: ModelClass.SMALL
         });
 
+
+        const callback = async (content: any) => {
+          const reply = await this.replyToCast(content.text, payload.data.hash);
+          return reply ? [reply] : [];
+      };
+
+
         if (response?.text) {
-            await this.replyToCast(response.text, payload.data.hash);
+            const responseMemories = await callback(response);
             elizaLogger.success('Respuesta publicada exitosamente');
+            
+            // Procesar acciones después de enviar la respuesta
+            if (responseMemories.length > 0) {
+                await this.runtime.processActions(
+                    memory,
+                    responseMemories,
+                    state2,
+                    callback
+                );
+            }
         }
     } catch (error) {
         elizaLogger.error('Error en handleReply:', error);
@@ -562,30 +592,54 @@ private async handleReply(payload: WebhookPayload) {
     }
 }
 
-  private async replyToCast(text: string, parentHash: string) {
-    try {
+private async replyToCast(text: string, parentHash: string): Promise<any> {
+  try {
       const response = await fetch('https://api.neynar.com/v2/farcaster/cast', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'content-type': 'application/json',
-          'x-api-key': this.config.apiKey
-        },
-        body: JSON.stringify({
-          signer_uuid: this.config.signerUuid,
-          text: text,
-          parent: parentHash
-        })
+          method: 'POST',
+          headers: {
+              'accept': 'application/json',
+              'content-type': 'application/json',
+              'x-api-key': this.config.apiKey
+          },
+          body: JSON.stringify({
+              signer_uuid: this.config.signerUuid,
+              text: text,
+              parent: parentHash
+          })
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(`Error publicando respuesta: ${JSON.stringify(error)}`);
+          const error = await response.json();
+          throw new Error(`Error publicando respuesta: ${JSON.stringify(error)}`);
       }
-    } catch (error) {
+
+      const responseData = await response.json();
+      
+      // Crear y retornar un objeto de memoria para la respuesta
+      const memory = {
+          id: stringToUuid(responseData.cast.hash + "-" + this.runtime.agentId),
+          userId: this.runtime.agentId,
+          agentId: this.runtime.agentId,
+          content: {
+              text,
+              source: 'farcaster',
+              metadata: {
+                  castHash: responseData.cast.hash,
+                  parentHash: parentHash
+              }
+          },
+          roomId: stringToUuid(`farcaster-${parentHash}`),
+          createdAt: Date.now()
+      };
+
+      await this.runtime.messageManager.createMemory(memory);
+      return memory;
+
+  } catch (error) {
       elizaLogger.error('Error publicando respuesta en Farcaster:', error);
-    }
+      return null;
   }
+}
 
   private async registerWebhook(webhookUrl: string) {
     try {
