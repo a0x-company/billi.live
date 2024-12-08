@@ -17,13 +17,11 @@ export const TokenTrade: React.FC<{
     }
   };
   return (
-    <div className="bg-gray-900 rounded-lg overflow-hidden border border-gray-800">
-      <iframe
-        ref={iframeRef}
-        src={url}
-        className="w-full h-full"
-        onLoad={handleLoad}
-      />
-    </div>
+    <iframe
+      ref={iframeRef}
+      src={url}
+      className="w-full h-full"
+      onLoad={handleLoad}
+    />
   );
 };

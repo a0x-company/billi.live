@@ -91,7 +91,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="bg-gray-800 shadow-sm">
+    <header className="bg-gray-800 shadow-sm max-md:px-4">
       <ul className="flex gap-4 w-full py-4 max-w-[1440px] mx-auto items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Tv className="w-8 h-8 text-purple-600" />
@@ -114,7 +114,7 @@ const Navbar = () => {
                 ) : (
                   <User2 className="w-8 h-8" />
                 )}
-                {farcasterUser.name}
+                <p className="max-md:hidden">{farcasterUser.name}</p>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-purple-500 mt-4 border-none">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
