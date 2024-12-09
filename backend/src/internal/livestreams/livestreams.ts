@@ -30,7 +30,7 @@ interface LivepeerManager {
 }
 
 interface PlayHtManager {
-  convertTextToSpeech(text: string): Promise<string>;
+  convertTextToSpeech(text: string): Promise<any>;
 }
 
 export class LivestreamService {
@@ -99,7 +99,7 @@ export class LivestreamService {
     return await this.livestreamStorage.getLivestreamByTokenAddress(tokenAddress);
   }
 
-  public async convertTextToSpeech(text: string): Promise<string> {
+  public async convertTextToSpeech(text: string): Promise<ReadableStream> {
     return await this.playHtService.convertTextToSpeech(text);
   }
 }

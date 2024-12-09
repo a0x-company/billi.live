@@ -23,7 +23,7 @@ interface LivestreamManager {
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
   getLivesForLanding(): Promise<Livestream[]>;
   getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
-  convertTextToSpeech(text: string): Promise<string>;
+  convertTextToSpeech(text: string): Promise<any>;
 }
 
 export function livestreamsRoutes(router: Express, ctx: Context) {
