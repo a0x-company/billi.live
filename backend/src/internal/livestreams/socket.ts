@@ -9,6 +9,8 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 import { LivestreamStorage } from "./storage";
 import { connectedUsers } from "./sharedState";
 
+let globalIO: SocketIOServer;
+
 const comments: {
   [key: string]: {
     id: string;
@@ -35,6 +37,8 @@ export function setupSocket(server: Server, firestore: Firestore) {
     pingInterval: 10000,
     pingTimeout: 120000,
   });
+
+  globalIO = io;
 
   io.on("connection", (socket: Socket) => {
     console.log("A user connected with socket ID:", socket.id);
@@ -128,4 +132,11 @@ export function setupSocket(server: Server, firestore: Firestore) {
   });
 
   return io;
+}
+
+export function getIO() {
+  if (!globalIO) {
+    throw new Error("Socket.IO no ha sido inicializado");
+  }
+  return globalIO;
 }

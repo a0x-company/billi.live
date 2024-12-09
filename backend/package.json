@@ -34,6 +34,7 @@
     "module-alias": "^2.2.3",
     "moralis": "^2.26.9",
     "morgan": "^1.10.0",
+    "playht": "^0.14.0",
     "request": "^2.88.2",
     "resend": "^2.0.0",
     "socket.io": "^4.8.1",

@@ -99,7 +99,7 @@ export class LivestreamService {
     return await this.livestreamStorage.getLivestreamByTokenAddress(tokenAddress);
   }
 
-  public async convertTextToSpeech(text: string): Promise<ReadableStream> {
+  public async convertTextToSpeech(text: string): Promise<any> {
     return await this.playHtService.convertTextToSpeech(text);
   }
 }

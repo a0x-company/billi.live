@@ -55,12 +55,15 @@ const getLiveStremingByTokenAddress = async (
 
 const TokenDetail = ({ address }: { address: string }) => {
   const socketRef = useRef<Socket | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [userCount, setUserCount] = useState(0);
   const [users, setUsers] = useState<string[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const isConnectedRoom = useRef(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
+    if (!hasInteracted) return; // No conectar socket hasta que haya interacción
     if (isConnectedRoom.current) return;
     console.log("Joining stream with streamId: ", address);
 
@@ -98,6 +101,33 @@ const TokenDetail = ({ address }: { address: string }) => {
       socketRef.current.on("previousComments", (prevComments: Comment[]) => {
         setComments(prevComments);
       });
+
+      socketRef.current.on("new-audio", ({ audio }) => {
+        // Convertir el base64 a blob
+        const audioData = atob(audio);
+        const arrayBuffer = new ArrayBuffer(audioData.length);
+        const uint8Array = new Uint8Array(arrayBuffer);
+
+        for (let i = 0; i < audioData.length; i++) {
+          uint8Array[i] = audioData.charCodeAt(i);
+        }
+
+        const blob = new Blob([uint8Array], { type: "audio/mp3" });
+        const audioUrl = URL.createObjectURL(blob);
+
+        console.log("New audio voice for justbilli");
+
+        // Reproducir el audio
+        if (audioRef.current) {
+          audioRef.current.src = audioUrl;
+          audioRef.current.play().catch(console.error);
+        }
+
+        // Limpiar la URL cuando termine
+        audioRef.current?.addEventListener("ended", () => {
+          URL.revokeObjectURL(audioUrl);
+        });
+      });
     }
 
     return () => {
@@ -109,7 +139,7 @@ const TokenDetail = ({ address }: { address: string }) => {
         socketRef.current.disconnect();
       }
     };
-  }, [address]);
+  }, [address, hasInteracted]);
 
   const { farcasterUser } = useContext(FarcasterUserContext);
 
@@ -128,8 +158,22 @@ const TokenDetail = ({ address }: { address: string }) => {
 
   const isStreamer = stream?.handle === farcasterUser?.name;
 
+  if (!hasInteracted) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <button
+          onClick={() => setHasInteracted(true)}
+          className="bg-white text-black px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          Iniciar Stream y Audio
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-[320px_1fr] lg:grid-cols-[895px_1fr] gap-4 py-8">
+      <audio ref={audioRef} className="hidden" />
       <div className="grid grid-cols-1 grid-rows-[655px_1fr] gap-4">
         <div className="flex flex-col gap-4">
           {isLoading && (
@@ -173,8 +217,12 @@ const TokenDetail = ({ address }: { address: string }) => {
           {/* Otherwise, render <StreamPreview /> */}
           {stream && (
             <>
-              <h1 className="text-2xl font-bold mb-2">{stream.title}</h1>
+              <h1 className="text-2xl font-bold mb-2 text-white">
+                {stream.title}
+              </h1>
+
               <p className="text-gray-200">{stream.description}</p>
+
               <div className="flex items-center gap-4 mb-4">
                 <span className="text-rose-500 font-medium flex items-center gap-1">
                   <Heart className="w-4 h-4" /> {userCount}{" "}

@@ -1,17 +1,22 @@
-// third-party
-import { Request, Response } from "express";
-
+import { RequestHandler } from "express";
+import { getIO } from "@internal/livestreams/socket";
 import { Context } from "./routes";
 
-export const convertTextToSpeechHandler = (ctx: Context) => {
-  return async (req: Request, res: Response) => {
-    const { text } = req.body;
+export const convertTextToSpeechHandler = (ctx: Context): RequestHandler => {
+  return async (req, res) => {
+    try {
+      const { text, streamId } = req.body;
+      const audioBuffer = await ctx.livestreamService.convertTextToSpeech(text);
 
-    const speech = await ctx.livestreamService.convertTextToSpeech(text);
+      // Emitir el audio como base64 para que sea compatible con el socket
+      const audioBase64 = audioBuffer.toString("base64");
+      const io = getIO();
+      io.to(streamId).emit("new-audio", { audio: audioBase64 });
 
-    return res.status(200).json({
-      message: "speech generated successfully",
-      data: speech,
-    });
+      res.json({ success: true, data: audioBase64 });
+    } catch (error) {
+      console.error("Error en text-to-speech:", error);
+      res.status(500).json({ error: "Error al convertir texto a voz" });
+    }
   };
 };

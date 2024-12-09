@@ -20,52 +20,43 @@ export class PlayHtService {
     }
   }
 
-  public async convertTextToSpeech(text: string): Promise<string> {
+  public async convertTextToSpeech(text: string): Promise<Buffer> {
     try {
       const fileName = `${uuidv4()}.mp3`;
       const filePath = path.join(this.tempDir, fileName);
 
       const stream = await PlayHT.stream(text, {
-        voiceEngine: "Play3.0-mini",
-        // voiceId: "victor",
-        // quality: "high",
+        voiceEngine: "PlayHT1.0",
+        voiceId:
+          "s3://mockingbird-prod/agent_47_carmelo_pampillonio_58e796e1-0b87-4f3e-8b36-7def6d65ce66/voices/speaker/manifest.json",
       });
 
-      // Crear write stream
-      const fileStream = fs.createWriteStream(filePath);
+      // Guardar el audio y convertirlo a Buffer
+      const chunks: Buffer[] = [];
+      stream.on("data", (chunk: Buffer) => chunks.push(chunk));
 
-      // Guardar el audio
       await new Promise((resolve, reject) => {
-        stream.pipe(fileStream);
         stream.on("end", resolve);
         stream.on("error", reject);
       });
 
-      return filePath;
+      // Limpiar archivo temporal si se creó
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+
+      return Buffer.concat(chunks);
     } catch (error) {
       console.error("Error en PlayHT service:", error);
       throw new Error("Error al convertir texto a voz");
     }
   }
 
-  // Método para limpiar archivos temporales
-  public cleanupTempFile(filePath: string): void {
-    try {
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
-    } catch (error) {
-      console.error("Error al limpiar archivo temporal:", error);
-    }
-  }
+  public async convertTextToSpeechUrl(text: string): Promise<any> {
+    const url = await PlayHT.generate(text);
 
-  public async getAvailableVoices() {
-    try {
-      const voices = await PlayHT.listVoices();
-      return voices;
-    } catch (error) {
-      console.error("Error al obtener voces disponibles:", error);
-      throw new Error("Error al obtener voces disponibles");
-    }
+    console.log(url);
+
+    return url;
   }
 }
