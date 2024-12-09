@@ -212,7 +212,7 @@ const TokenDetail = ({ address }: { address: string }) => {
           isConnectedRoom={isConnectedRoom}
           socketRef={socketRef}
         />
-        <TokenTrade />
+        {address && <TokenTrade tokenAddress={address as string} />}
       </div>
     </div>
   );
