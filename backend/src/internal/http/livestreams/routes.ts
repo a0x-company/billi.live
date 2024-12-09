@@ -8,6 +8,7 @@ import { updateLivestreamStatus } from "./update-livestream-status";
 import { getLastLivestreamForHandleHandler } from "./get-last-livestream-for-handle-handler";
 import { getLivesForLandingHandler } from "./get-lives-for-landing-handler";
 import { getLivestreamByTokenAddressHandler } from "./get-livestream-for-token-address-handler";
+import { convertTextToSpeechHandler } from "./convert-text-to-speech-handler";
 
 // types
 import { Livestream } from "@internal/livestreams/types";
@@ -22,6 +23,7 @@ interface LivestreamManager {
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
   getLivesForLanding(): Promise<Livestream[]>;
   getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
+  convertTextToSpeech(text: string): Promise<string>;
 }
 
 export function livestreamsRoutes(router: Express, ctx: Context) {
@@ -39,6 +41,8 @@ export function livestreamsRoutes(router: Express, ctx: Context) {
   livestreamsRouter.get("/lives-for-landing", getLivesForLandingHandler(ctx));
 
   livestreamsRouter.get("/livestream-by-token-address", getLivestreamByTokenAddressHandler(ctx));
+
+  livestreamsRouter.post("/convert-text-to-speech", convertTextToSpeechHandler(ctx));
 
   router.use("/livestreams", livestreamsRouter);
 }

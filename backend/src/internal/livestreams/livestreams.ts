@@ -4,6 +4,7 @@ import { Firestore } from "@google-cloud/firestore";
 // services
 import { LivepeerService } from "./livepeer";
 import { LivestreamStorage } from "./storage";
+import { PlayHtService } from "./play-ht";
 
 // types
 import { CreateLivestreamLivepeerResponse, Livestream, StreamInfo } from "./types";
@@ -28,14 +29,21 @@ interface LivepeerManager {
   createLivestream(name: string, record: boolean): Promise<CreateLivestreamLivepeerResponse>;
 }
 
+interface PlayHtManager {
+  convertTextToSpeech(text: string): Promise<string>;
+}
+
 export class LivestreamService {
   private livestreamStorage: LivestreamManager;
 
   private livepeerService: LivepeerManager;
 
+  private playHtService: PlayHtManager;
+
   constructor(firestore: Firestore) {
     this.livestreamStorage = new LivestreamStorage(firestore);
     this.livepeerService = new LivepeerService();
+    this.playHtService = new PlayHtService();
   }
 
   public async createLivestream(
@@ -89,5 +97,9 @@ export class LivestreamService {
 
   public async getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null> {
     return await this.livestreamStorage.getLivestreamByTokenAddress(tokenAddress);
+  }
+
+  public async convertTextToSpeech(text: string): Promise<string> {
+    return await this.playHtService.convertTextToSpeech(text);
   }
 }
