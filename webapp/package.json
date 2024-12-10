@@ -33,6 +33,7 @@
     "react-dom": "^18.3.1",
     "react-icons": "^5.4.0",
     "tailwind-merge": "^2.5.5",
+    "three": "^0.171.0",
     "viem": "^2.21.53",
     "wagmi": "^2.13.3"
   },
@@ -41,6 +42,7 @@
     "@types/qrcode.react": "^1.0.5",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/three": "^0.170.0",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "postcss": "^8",
