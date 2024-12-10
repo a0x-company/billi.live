@@ -22,6 +22,7 @@ interface LivestreamManager {
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
   getLivesForLanding(): Promise<Livestream[]>;
   getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
+  publishLivestream(livestream: Livestream): Promise<string | void>;
 }
 
 export function livestreamsRoutes(router: Express, ctx: Context) {

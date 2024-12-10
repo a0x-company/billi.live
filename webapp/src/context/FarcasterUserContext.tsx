@@ -8,7 +8,7 @@ export interface FarcasterUser {
   signer_approval_url?: string;
   fid?: number;
   pfpUrl?: string;
-  name?: string;
+  handle?: string;
   displayName?: string;
 }
 
@@ -60,7 +60,7 @@ export const FarcasterUserProvider = ({
       setFarcasterUser((prevUser) => ({
         ...prevUser,
         pfpUrl: session.user?.image || undefined,
-        name: session.user?.name || undefined,
+        handle: session.user?.name || undefined,
       }));
     }
   }, [session, setFarcasterUser]);

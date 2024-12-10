@@ -133,3 +133,25 @@ export type Livestream = {
   description?: string;
   pubHash?: string;
 };
+
+export enum ActionType {
+  DISLIKE = "dislike",
+  LIKE = "like",
+  UNLIKE = "unlike",
+  COMMENT = "comment",
+  POST = "cast",
+  MIRROR = "recast",
+  FOLLOW = "follow",
+  UNFOLLOW = "unfollow",
+  DELETE = "delete",
+}
+
+export type PostAdditionalData = {
+  signerUuid: string;
+  metadata: {
+    type: string;
+    text: string;
+    handle: string;
+    channelId?: string;
+  };
+};

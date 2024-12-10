@@ -50,6 +50,23 @@ const getRandomTokenAddress = () => {
   return tokenAddresses[Math.floor(Math.random() * tokenAddresses.length)];
 };
 
+export const requestLivestreamDetailsTemplate = `
+You need to ask the user for the necessary details to create a livestream. 
+
+Respond with a polite and concise message requesting the following details:
+- Handle: Their unique username or identifier.
+- Title: The title of the livestream.
+- Description: A short description of the livestream.
+- Token Symbol: The token they want to associate with the livestream.
+
+Your response should be formatted as a message directly addressed to the user, without any extra context or explanation. Example format:
+"To proceed, please provide the following details:
+- Handle: Your unique username or identifier.
+- Title: The title of your livestream.
+- Description: A brief description of the livestream.
+- Token Symbol: The token associated with the livestream."
+`;
+
 export const livestreamGeneration: Action = {
   name: "GENERATE_LIVESTREAM",
   similes: [
@@ -60,7 +77,8 @@ export const livestreamGeneration: Action = {
     "START_STREAM",
     "START_LIVE",
   ],
-  description: "Always help the user create a livestream.",
+  description:
+    "Always help the user create a livestream. Call this action when the user asks to create a livestream, live or stream. Be sure to ask for the title, description and token symbol for the livestream. Use this action when the user provides the title, description and token symbol in the message.",
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
@@ -113,16 +131,13 @@ export const livestreamGeneration: Action = {
       !parsedDetails.tokenSymbol
     ) {
       elizaLogger.log("Details are missing, asking for more information...");
-      // const messageIncompleteDetails = await generateText({
-      //   runtime: _runtime,
-      //   context: `The details provided are incorrect. Please provide a handle, title, description and token symbol for create a your livestream. IMPORTANT: SHORT RESPONSES, NO EXTRA TEXT.`,
-      //   modelClass: ModelClass.SMALL,
-      //   stop: ["\n"],
-      // });
-      // callback({
-      //   text: messageIncompleteDetails,
-      // });
-      return false;
+      const messageIncompleteDetails = await generateText({
+        runtime: _runtime,
+        context: requestLivestreamDetailsTemplate,
+        modelClass: ModelClass.SMALL,
+        stop: ["\n"],
+      });
+      return messageIncompleteDetails;
     }
 
     const response = await createLivestream({

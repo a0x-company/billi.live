@@ -59,12 +59,12 @@ export const ChatBox: React.FC<{
       setOpenQrSigner(true);
       return;
     }
-    if (!newMessage.trim() || !farcasterUser?.name || !farcasterUser?.pfpUrl)
+    if (!newMessage.trim() || !farcasterUser?.handle || !farcasterUser?.pfpUrl)
       return;
 
     const message: Comment = {
       id: crypto.randomUUID(),
-      handle: farcasterUser?.name,
+      handle: farcasterUser?.handle,
       pfp: farcasterUser?.pfpUrl,
       comment: newMessage.trim(),
       timestamp: new Date().toISOString(),
