@@ -29,3 +29,32 @@ export async function GET(req: Request) {
     );
   }
 }
+
+export async function POST(req: Request) {
+  console.log("[POST][api/agent]");
+
+  const { text, streamId } = await req.json();
+
+  const agentId = "8cc63a38-6ebd-0139-82ee-75727e511406";
+
+  try {
+    const response = await axios.post(
+      `http://localhost:8080/livestreams/convert-text-to-speech`,
+      {
+        text: text,
+        streamId: streamId,
+      }
+    );
+
+    const responseData = response.data;
+
+    return NextResponse.json(responseData);
+  } catch (error) {
+    console.error("Error in GET /api/agent", error);
+    console.error(error);
+    return NextResponse.json(
+      { message: "Error talking with agent" },
+      { status: 500 }
+    );
+  }
+}

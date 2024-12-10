@@ -55,7 +55,7 @@ export const ChatBox: React.FC<{
     }
   }, [farcasterUser]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     console.log("handleSendMessage");
 
     const farcasterUser = {
@@ -79,16 +79,21 @@ export const ChatBox: React.FC<{
       timestamp: new Date().toISOString(),
     };
 
-    console.log("message", message);
+    // if (socketRef.current) {
+    //   socketRef.current.emit("newComment", {
+    //     streamId: address,
+    //     ...message,
+    //   });
+    // }
 
-    if (socketRef.current) {
-      socketRef.current.emit("newComment", {
-        streamId: address,
-        ...message,
-      });
-    }
+    setComments((prevComments) => [...prevComments, message]);
 
     setNewMessage("");
+
+    const agentResponse = await axios.post(`/api/agent`, {
+      text: newMessage,
+      streamId: address,
+    });
   };
 
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
