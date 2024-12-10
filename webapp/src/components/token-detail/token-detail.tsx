@@ -152,7 +152,7 @@ const TokenDetail = ({ address }: { address: string }) => {
 
         audioRef.current?.addEventListener("ended", () => {
           URL.revokeObjectURL(audioUrl);
-          setTimeout(() => setCurrentText(""), 2000);
+          setTimeout(() => setCurrentText(""), 1000);
         });
       });
     }
@@ -277,13 +277,6 @@ const TokenDetail = ({ address }: { address: string }) => {
         />
         {address && <TokenTrade tokenAddress={address as string} />}
       </div>
-
-      {/* Mostrar el texto actual si existe */}
-      {currentText && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-6 py-3 rounded-lg shadow-lg whitespace-nowrap overflow-hidden text-ellipsis max-w-[90vw]">
-          {currentText}
-        </div>
-      )}
     </div>
   );
 };

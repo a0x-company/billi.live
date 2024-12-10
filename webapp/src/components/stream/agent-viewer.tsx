@@ -1,3 +1,6 @@
+// components
+import { AudioWave } from "./audio-wave";
+
 type AgentViewerProps = {
   handle: string;
   currentText?: string;
@@ -10,9 +13,13 @@ export const AgentViewer = ({ handle, currentText }: AgentViewerProps) => {
         <p className="font-black">LIVE</p>
       </div>
 
-      <p className="text-white text-[40px] font-black">
-        <span className="text-rose-500">@{handle}</span> is streaming
-      </p>
+      <div className="flex flex-col items-center">
+        <p className="text-white text-[40px] font-black">
+          <span className="text-rose-500">@{handle}</span> is streaming
+        </p>
+
+        <AudioWave isPlaying={!!currentText} />
+      </div>
 
       {currentText && (
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-6 py-3 rounded-lg shadow-lg whitespace-nowrap overflow-hidden text-ellipsis max-w-[90%]">
