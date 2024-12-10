@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import express from 'express';
 import ngrok from 'ngrok';
-import { elizaLogger, stringToUuid, generateMessageResponse, ModelClass, messageCompletionFooter, shouldRespondFooter, generateShouldRespond, AgentRuntime } from '@ai16z/eliza';
+import { elizaLogger, stringToUuid, generateMessageResponse, ModelClass, messageCompletionFooter, shouldRespondFooter, generateShouldRespond, AgentRuntime, Memory, Action } from '@ai16z/eliza';
 import { composeContext } from '@ai16z/eliza';
 import dotenv from 'dotenv';
 
@@ -409,7 +409,12 @@ export class NeynarClient extends EventEmitter {
         });
 
         const callback = async (content: any) => {
+          console.log('=== CALLBACK CONTENT ===');
+          console.log('Content received:', JSON.stringify(content, null, 2));
+          
           const reply = await this.replyToCast(content.text, payload.data.hash);
+          
+          console.log('Reply from Farcaster:', JSON.stringify(reply, null, 2));
           
           if (reply) {
               const memory = {
@@ -420,31 +425,41 @@ export class NeynarClient extends EventEmitter {
                   content: {
                       text: content.text,
                       action: content.action,
-              },
-              createdAt: Date.now()
-          };
+                  },
+                  createdAt: Date.now()
+              };
               
+              console.log('New Memory Created:', JSON.stringify(memory, null, 2));
               await this.runtime.messageManager.createMemory(memory);
               return [memory];
           }
-          
           return [];
       };
 
       if (response?.text) {
-        const responseMemories = await callback(response);
-
-        
-        if (response.text.length > 0) {
-            await this.runtime.processActions(
-                memory,
-                responseMemories,
-                state2,
-                callback
-            );
+        const responseMemory: Memory = {
+            id: stringToUuid(response.text),
+            userId: this.runtime.agentId,
+            agentId: this.runtime.agentId,
+            roomId: memory.roomId,
+            content: {
+                text: response.text,
+                action: response?.action
+            },
+            createdAt: Date.now()
+        };
+    
+        const actionResult :any = await this.runtime.processActions(
+            memory,
+            [responseMemory], 
+            state2,
+            callback
+        );
+    
+        if (!actionResult || !responseMemory.content?.action?.toLowerCase().includes('generatelivestream')) {
+            const responseMemories = await callback(response);
+            elizaLogger.success('Respuesta publicada exitosamente');
         }
-
-        elizaLogger.success('Respuesta publicada exitosamente');
     }
     } catch (error) {
         elizaLogger.error('Error en handleMention:', error);
