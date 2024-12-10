@@ -68,13 +68,13 @@ const Navbar = () => {
       setIsConnected(true);
       setFarcasterUser({
         ...farcasterUser,
-        name: res.username,
+        handle: res.username,
         pfpUrl: res.pfpUrl,
         fid: res.fid,
         displayName: res.displayName,
       });
       await createAndStoreSigner({
-        name: res.username,
+        handle: res.username,
         pfpUrl: res.pfpUrl,
         fid: res.fid,
         displayName: res.displayName,
@@ -114,7 +114,7 @@ const Navbar = () => {
                 ) : (
                   <User2 className="w-8 h-8" />
                 )}
-                <p className="max-md:hidden">{farcasterUser.name}</p>
+                <p className="max-md:hidden">{farcasterUser.handle}</p>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="bg-purple-500 mt-4 border-none">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>

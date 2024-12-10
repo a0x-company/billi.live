@@ -8,6 +8,9 @@ import { Server as SocketIOServer, Socket } from "socket.io";
 // internal
 import { LivestreamStorage } from "./storage";
 import { connectedUsers } from "./sharedState";
+import { ActionType } from "./types";
+import { ProfilesService } from "@internal/profiles";
+import { FarcasterService } from "@internal/farcaster";
 
 const comments: {
   [key: string]: {
@@ -16,11 +19,14 @@ const comments: {
     pfp: string;
     comment: string;
     timestamp: string;
+    replies?: string[];
   }[];
 } = {};
 
 export function setupSocket(server: Server, firestore: Firestore) {
   const liveStreamStorage = new LivestreamStorage(firestore);
+  const profileService = new ProfilesService(firestore);
+  const farcasterService = new FarcasterService(firestore);
 
   console.log(
     "setting up socket.io for counting users in streams, handling comments in billi.live"
@@ -105,17 +111,57 @@ export function setupSocket(server: Server, firestore: Firestore) {
       console.log("User disconnected with socket ID:", socket.id);
     });
 
-    socket.on("newComment", async ({ streamId, id, handle, pfp, comment, timestamp }) => {
-      if (!comments[streamId]) {
-        comments[streamId] = [];
+    socket.on(
+      "newComment",
+      async ({ streamId, id, handle, pfp, comment, timestamp, parentIdentifier = null }) => {
+        if (!comments[streamId]) {
+          comments[streamId] = [];
+        }
+
+        const newComment = { id, handle, pfp, comment, timestamp, parentIdentifier };
+        comments[streamId].push(newComment);
+        io.to(streamId).emit("comment", newComment);
+        try {
+          if (!handle) {
+            throw new Error("No handle found for comment: " + comment);
+          }
+
+          const signerUuid = await profileService.getSignerUuid(handle);
+
+          const pubHash = await liveStreamStorage.getPubHashByStreamId(streamId);
+
+          if (!pubHash) {
+            throw new Error("No pubHash found for streamId: " + streamId);
+          }
+          if (!signerUuid) {
+            throw new Error("No signerUuid found for handle: " + handle);
+          }
+          const actionType = ActionType.COMMENT;
+          const postId = parentIdentifier ? parentIdentifier : pubHash;
+
+          if (parentIdentifier) {
+            const parentComment = comments[streamId].find((c) => c.id === parentIdentifier);
+            if (!parentComment) {
+              throw new Error("Parent comment not found");
+            }
+            parentComment.replies?.push(newComment.id);
+          }
+
+          const commentData = {
+            signerUuid,
+            content: comment,
+          };
+
+          const identifier = await farcasterService.executeAction(actionType, postId, commentData);
+          newComment.id = identifier || "";
+          io.to(streamId).emit("commentUpdated", newComment);
+          console.log(`Successfully published comment: ${identifier}`);
+        } catch (error) {
+          console.error("Error publishing comment:", error);
+        }
+        console.log(`New comment in stream: ${streamId}, by: ${handle}`);
       }
-
-      const newComment = { id, handle, pfp, comment, timestamp };
-      comments[streamId].push(newComment);
-      io.to(streamId).emit("comment", newComment);
-
-      console.log(`New comment in stream: ${streamId}, by: ${handle}`);
-    });
+    );
 
     socket.on("action", ({ streamId, handle, action }) => {
       io.to(streamId).emit("action", {

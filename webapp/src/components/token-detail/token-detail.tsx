@@ -126,7 +126,7 @@ const TokenDetail = ({ address }: { address: string }) => {
     refetchOnReconnect: false,
   });
 
-  const isStreamer = stream?.handle === farcasterUser?.name;
+  const isStreamer = stream?.handle === farcasterUser?.handle;
 
   return (
     <div className="grid grid-cols-1 max-md:grid-rows-[auto_1fr_1fr_1fr] lg:grid-cols-[895px_1fr] gap-4 py-8 max-md:px-4">

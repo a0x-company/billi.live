@@ -6,7 +6,13 @@ import { LivepeerService } from "./livepeer";
 import { LivestreamStorage } from "./storage";
 
 // types
-import { CreateLivestreamLivepeerResponse, Livestream, StreamInfo } from "./types";
+import {
+  ActionType,
+  CreateLivestreamLivepeerResponse,
+  Livestream,
+  PostAdditionalData,
+  StreamInfo,
+} from "./types";
 
 // internal
 import { connectedUsers } from "./sharedState";
@@ -22,10 +28,23 @@ interface LivestreamManager {
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
   getLives(): Promise<Livestream[]>;
   getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
+  addPubHashToLivestream(streamId: string, pubHash: string): Promise<Livestream | null>;
 }
 
 interface LivepeerManager {
   createLivestream(name: string, record: boolean): Promise<CreateLivestreamLivepeerResponse>;
+}
+
+interface ProfileManager {
+  getSignerUuid(handle: string): Promise<string | null>;
+}
+
+interface FarcasterManager {
+  executeAction(
+    actionType: ActionType,
+    postId: string,
+    additionalData: PostAdditionalData
+  ): Promise<string | void>;
 }
 
 export class LivestreamService {
@@ -33,9 +52,19 @@ export class LivestreamService {
 
   private livepeerService: LivepeerManager;
 
-  constructor(firestore: Firestore) {
+  private profileManager: ProfileManager;
+
+  private farcasterSvc: FarcasterManager;
+
+  constructor(
+    firestore: Firestore,
+    profileManager: ProfileManager,
+    farcasterSvc: FarcasterManager
+  ) {
     this.livestreamStorage = new LivestreamStorage(firestore);
     this.livepeerService = new LivepeerService();
+    this.profileManager = profileManager;
+    this.farcasterSvc = farcasterSvc;
   }
 
   public async createLivestream(
@@ -89,5 +118,45 @@ export class LivestreamService {
 
   public async getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null> {
     return await this.livestreamStorage.getLivestreamByTokenAddress(tokenAddress);
+  }
+
+  public async publishLivestream(livestream: Livestream): Promise<string | void> {
+    console.log("PUBLISHING LIVESTREAM");
+    if (!livestream.handle) {
+      throw new Error("Livestream handle not found");
+    }
+
+    const actionType = ActionType.POST;
+
+    const signerUuid = await this.profileManager.getSignerUuid(livestream.handle);
+    if (!signerUuid) {
+      throw new Error("Signer UUID not found");
+    }
+
+    const title = livestream.title.split("-").pop() || livestream.title;
+    const postText = `I just went live on /billi.live\n\n${title}\n\n${livestream.description}\n\nCome join us.`;
+
+    const additionalData: PostAdditionalData = {
+      signerUuid: signerUuid,
+      metadata: {
+        type: "LIVESTREAM",
+        text: postText,
+        handle: livestream.handle,
+      },
+    };
+
+    const identifier = await this.farcasterSvc.executeAction(actionType, "", additionalData);
+    console.log("--------identifier------", identifier);
+
+    if (!identifier) {
+      throw new Error("Failed to publish livestream to Farcaster");
+    }
+
+    await this.livestreamStorage.addPubHashToLivestream(
+      livestream.livepeerInfo.streamId,
+      identifier
+    );
+
+    return identifier;
   }
 }
