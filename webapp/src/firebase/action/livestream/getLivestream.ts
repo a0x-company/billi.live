@@ -4,7 +4,7 @@ import { Livestream } from "@/types";
 
 export const getLivestream = async (
   id: string,
-  by: "tokenAddress" | "fid" | "username"
+  by: "tokenAddress" | "fid" | "handle"
 ) => {
   const normalizedId = id.toLowerCase();
   const q = query(livestreamDataCollection, where(by, "==", normalizedId));

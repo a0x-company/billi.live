@@ -59,7 +59,7 @@ export const ChatBox: React.FC<{
     console.log("handleSendMessage");
 
     const farcasterUser = {
-      name: "User",
+      handle: "User",
       pfpUrl: "",
     };
 
@@ -73,7 +73,7 @@ export const ChatBox: React.FC<{
 
     const message: Comment = {
       id: crypto.randomUUID(),
-      handle: farcasterUser?.name,
+      handle: farcasterUser?.handle,
       pfp: farcasterUser?.pfpUrl,
       comment: newMessage.trim(),
       timestamp: new Date().toISOString(),

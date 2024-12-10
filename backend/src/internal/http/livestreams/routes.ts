@@ -24,6 +24,7 @@ interface LivestreamManager {
   getLivesForLanding(): Promise<Livestream[]>;
   getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
   convertTextToSpeech(text: string): Promise<any>;
+  publishLivestream(livestream: Livestream): Promise<string | void>;
 }
 
 export function livestreamsRoutes(router: Express, ctx: Context) {

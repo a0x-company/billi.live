@@ -68,16 +68,15 @@ export class LivestreamStorage {
       if (!querySnapshot.empty) {
         const doc = querySnapshot.docs[0];
         await doc.ref.update({ status: status });
-
         const updatedDoc = await doc.ref.get();
         const data = updatedDoc.data();
-
         if (data) {
           return {
+            handle: data.handle,
             title: data.title,
             livepeerInfo: data.livepeerInfo,
             createdAt: data.createdAt,
-            castInFarcaster: data.castInFarcaster,
+            castInFarcaster: true,
             status: data.status,
             description: data.description,
           };
@@ -86,7 +85,11 @@ export class LivestreamStorage {
 
       return null;
     } catch (err: any) {
-      console.log(err instanceof Error ? err.message : "error desconocido");
+      if (err.code) {
+        console.log("error code Firestore:", err.code);
+      } else {
+        console.log(err instanceof Error ? err.message : "error desconocido");
+      }
       throw new Error(err instanceof Error ? err.message : "error desconocido");
     }
   }
@@ -179,5 +182,60 @@ export class LivestreamStorage {
       console.log(err instanceof Error ? err.message : "unknow error");
       throw new Error(err instanceof Error ? err.message : "unknow error");
     }
+  }
+
+  public async addPubHashToLivestream(
+    streamId: string,
+    pubHash: string
+  ): Promise<Livestream | null> {
+    try {
+      const querySnapshot = await this.firestore
+        .collection(this.LIVES_COLLECTION)
+        .where("livepeerInfo.streamId", "==", streamId)
+        .limit(1)
+        .get();
+
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        await doc.ref.update({ pubHash: pubHash });
+
+        const updatedDoc = await doc.ref.get();
+        const data = updatedDoc.data();
+
+        if (data) {
+          return {
+            handle: data.handle,
+            title: data.title,
+            livepeerInfo: data.livepeerInfo,
+            createdAt: data.createdAt,
+            status: data.status,
+            description: data.description,
+            pubHash: data.pubHash,
+          };
+        }
+      }
+
+      return null;
+    } catch (err: any) {
+      console.log(err instanceof Error ? err.message : "error desconocido");
+      throw new Error(err instanceof Error ? err.message : "error desconocido");
+    }
+  }
+
+  public async getPubHashByStreamId(streamId: string): Promise<string | null> {
+    const querySnapshot = await this.firestore
+      .collection(this.LIVES_COLLECTION)
+      // .where("livepeerInfo.streamId", "==", streamId) // TODO: change to livepeerInfo.streamId
+      .where("tokenAddress", "==", streamId)
+      .limit(1)
+      .get();
+
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      const data = doc.data();
+      return data.pubHash || null;
+    }
+
+    return null;
   }
 }
