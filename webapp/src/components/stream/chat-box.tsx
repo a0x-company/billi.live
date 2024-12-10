@@ -31,6 +31,7 @@ import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
+// TODO: change this to version with websocket
 export const ChatBox: React.FC<{
   comments: Comment[];
   setComments: React.Dispatch<React.SetStateAction<Comment[]>>;
@@ -55,12 +56,20 @@ export const ChatBox: React.FC<{
   }, [farcasterUser]);
 
   const handleSendMessage = () => {
-    if (!isSignerWriter) {
-      setOpenQrSigner(true);
-      return;
-    }
-    if (!newMessage.trim() || !farcasterUser?.name || !farcasterUser?.pfpUrl)
-      return;
+    console.log("handleSendMessage");
+
+    const farcasterUser = {
+      name: "User",
+      pfpUrl: "",
+    };
+
+    // if (!isSignerWriter) {
+    //   setOpenQrSigner(true);
+    //   return;
+    // }
+
+    // if (!newMessage.trim() || !farcasterUser?.name || !farcasterUser?.pfpUrl)
+    //   return;
 
     const message: Comment = {
       id: crypto.randomUUID(),
@@ -201,9 +210,9 @@ export const ChatBox: React.FC<{
         <h3 className="font-semibold text-white">Live Chat</h3>
       </div>
 
-      {!isConnected && newMessage.trim().length > 1 && (
+      {/* {!isConnected && newMessage.trim().length > 1 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center h-full bg-black/50 backdrop-blur-sm gap-4">
-          <h1>You are not connected to Farcaster 🔌</h1>
+          <h1 className="text-white">You are not connected to Farcaster 🔌</h1>
         </div>
       )}
 
@@ -214,7 +223,7 @@ export const ChatBox: React.FC<{
             <QRCode uri={farcasterUser?.signer_approval_url} />
           </div>
         </div>
-      )}
+      )} */}
 
       <ul
         ref={commentsContainerRef}

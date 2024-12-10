@@ -15,8 +15,6 @@ import { useQuery } from "@tanstack/react-query";
 // context
 import { FarcasterUserContext } from "@/context/FarcasterUserContext";
 
-// firebase
-
 // components
 import { LoadingSpinner } from "../spinner";
 import { ChatBox } from "../stream/chat-box";
@@ -41,7 +39,6 @@ const getLiveStremingByTokenAddress = async (
 ): Promise<Livestream> => {
   try {
     const response = await fetch(`/api/livestream?address=${address}`);
-    console.log("response", response);
     if (!response.ok) {
       throw new Error("Stream not found");
     }
@@ -64,6 +61,25 @@ const TokenDetail = ({ address }: { address: string }) => {
   const isConnectedRoom = useRef(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [currentText, setCurrentText] = useState<string>("");
+
+  const {
+    data: stream,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: ["stream", address],
+    queryFn: () => getLiveStremingByTokenAddress(address as string),
+    enabled: !!address,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+  });
+
+  const { farcasterUser } = useContext(FarcasterUserContext);
+
+  const isStreamer = stream?.handle === farcasterUser?.name;
+
+  const isStreamedByAgent = stream?.streamedByAgent;
 
   useEffect(() => {
     if (!hasInteracted) return;
@@ -124,6 +140,16 @@ const TokenDetail = ({ address }: { address: string }) => {
           audioRef.current.play().catch(console.error);
         }
 
+        const agentComment: Comment = {
+          id: crypto.randomUUID(),
+          handle: stream?.handle || "billi",
+          pfp: "/assets/stream/billi-pfp.png",
+          comment: text,
+          timestamp: new Date().toISOString(),
+        };
+
+        setComments((prevComments) => [...prevComments, agentComment]);
+
         audioRef.current?.addEventListener("ended", () => {
           URL.revokeObjectURL(audioUrl);
           setTimeout(() => setCurrentText(""), 2000);
@@ -140,28 +166,7 @@ const TokenDetail = ({ address }: { address: string }) => {
         socketRef.current.disconnect();
       }
     };
-  }, [address, hasInteracted]);
-
-  const { farcasterUser } = useContext(FarcasterUserContext);
-
-  const {
-    data: stream,
-    error,
-    isLoading,
-  } = useQuery({
-    queryKey: ["stream", address],
-    queryFn: () => getLiveStremingByTokenAddress(address as string),
-    enabled: !!address,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-  });
-
-  const isStreamer = stream?.handle === farcasterUser?.name;
-
-  const isStreamedByAgent = stream?.streamedByAgent;
-
-  console.log("isStreamedByAgent", isStreamedByAgent);
+  }, [address, hasInteracted, stream?.handle]);
 
   if (!hasInteracted) {
     return (
@@ -170,7 +175,7 @@ const TokenDetail = ({ address }: { address: string }) => {
           onClick={() => setHasInteracted(true)}
           className="bg-white text-black px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
         >
-          Iniciar Stream y Audio
+          Start Stream and Audio
         </button>
       </div>
     );
@@ -244,7 +249,10 @@ const TokenDetail = ({ address }: { address: string }) => {
 
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
                 {isStreamedByAgent ? (
-                  <AgentViewer handle={stream.handle as string} />
+                  <AgentViewer
+                    handle={stream.handle as string}
+                    currentText={currentText}
+                  />
                 ) : isStreamer ? (
                   <StreamHost stream={stream} />
                 ) : (
