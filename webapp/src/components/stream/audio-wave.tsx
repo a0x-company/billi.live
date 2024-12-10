@@ -18,7 +18,6 @@ export const AudioWave = ({ isPlaying }: AudioWaveProps) => {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Configuración inicial
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, 800 / 200, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
@@ -26,7 +25,6 @@ export const AudioWave = ({ isPlaying }: AudioWaveProps) => {
     renderer.setSize(800, 200);
     containerRef.current.appendChild(renderer.domElement);
 
-    // Crear barras de audio
     const bars: THREE.Mesh[] = [];
     const barGeometry = new THREE.BoxGeometry(0.2, 1, 0.2);
     const barMaterial = new THREE.MeshPhongMaterial({
@@ -35,7 +33,6 @@ export const AudioWave = ({ isPlaying }: AudioWaveProps) => {
       specular: 0x444444,
     });
 
-    // Añadir luces
     const light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(0, 1, 2);
     scene.add(light);
@@ -43,7 +40,6 @@ export const AudioWave = ({ isPlaying }: AudioWaveProps) => {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    // Crear barras
     const numBars = 32;
     for (let i = 0; i < numBars; i++) {
       const bar = new THREE.Mesh(barGeometry, barMaterial);
@@ -87,7 +83,6 @@ export const AudioWave = ({ isPlaying }: AudioWaveProps) => {
 
       if (isPlaying) {
         barsRef.current.forEach((bar, i) => {
-          // Crear una animación más natural y aleatoria
           const time = Date.now() * 0.001;
           const height = Math.sin(time * 2 + i * 0.2) * 0.5 + 0.7;
           bar.scale.y = Math.max(0.1, height);

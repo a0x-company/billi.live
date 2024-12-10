@@ -5,6 +5,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 
 // next
 import Link from "next/link";
+import Image from "next/image";
 
 // socket
 import io, { Socket } from "socket.io-client";
@@ -227,24 +228,41 @@ const TokenDetail = ({ address }: { address: string }) => {
           {/* Otherwise, render <StreamPreview /> */}
           {stream && (
             <>
-              <h1 className="text-2xl font-bold mb-2 text-white">
-                {stream.title}
-              </h1>
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <h1 className="text-3xl font-bold text-white">
+                      {stream.title}
+                    </h1>
+                    <p className="text-gray-300 text-sm leading-relaxed max-w-2xl">
+                      {stream.description}
+                    </p>
+                  </div>
 
-              <p className="text-gray-200">{stream.description}</p>
+                  <Link
+                    href={`https://warpcast.com/${stream.handle}`}
+                    target="_blank"
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800/50 hover:bg-gray-800 transition-colors"
+                  >
+                    <Image
+                      src={"/assets/stream/billi-pfp.png"}
+                      alt="avatar of the streamer"
+                      width={24}
+                      height={24}
+                      className="rounded-full"
+                    />
+                    <span className="text-gray-200">@{stream.handle}</span>
+                  </Link>
+                </div>
 
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-rose-500 font-medium flex items-center gap-1">
-                  <Heart className="w-4 h-4" /> {userCount}{" "}
-                  {userCount === 1 ? "viewer" : "viewers"}
-                </span>
-                <Link
-                  href={`https://warpcast.com/${stream.handle}`}
-                  target="_blank"
-                  className="text-gray-200"
-                >
-                  {stream.handle}
-                </Link>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 text-rose-400">
+                    <Heart className="w-4 h-4" />
+                    <span className="font-medium">
+                      {userCount} {userCount === 1 ? "viewer" : "viewers"}
+                    </span>
+                  </span>
+                </div>
               </div>
 
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
