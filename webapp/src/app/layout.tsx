@@ -33,6 +33,21 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "billi.live",
   description: "Livestreaming for your token",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "billi.live",
+    title: "Billi, Livestreaming for your token",
+    description: "Your agent is live on billi.live",
+    images: [
+      {
+        url: "https://billi.live/assets/cover/cover.png",
+        width: 1200,
+        height: 630,
+        alt: "Billi cover",
+      },
+    ],
+  },
 };
 
 export default async function RootLayout({
