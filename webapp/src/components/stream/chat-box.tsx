@@ -37,7 +37,14 @@ export const ChatBox: React.FC<{
   setComments: React.Dispatch<React.SetStateAction<Comment[]>>;
   isConnectedRoom: React.MutableRefObject<boolean>;
   socketRef: React.MutableRefObject<Socket | null>;
-}> = ({ comments, isConnectedRoom, setComments, socketRef }) => {
+  isStreamedByAgent: boolean;
+}> = ({
+  comments,
+  isConnectedRoom,
+  setComments,
+  socketRef,
+  isStreamedByAgent,
+}) => {
   const farcasterContext = useContext(FarcasterUserContext);
   const { farcasterUser, setFarcasterUser, isConnected, setIsConnected } =
     farcasterContext;
@@ -58,18 +65,18 @@ export const ChatBox: React.FC<{
   const handleSendMessage = async () => {
     console.log("handleSendMessage");
 
-    const farcasterUser = {
-      handle: "User",
-      pfpUrl: "",
-    };
+    if (!isSignerWriter) {
+      setOpenQrSigner(true);
+      return;
+    }
 
-    // if (!isSignerWriter) {
-    //   setOpenQrSigner(true);
-    //   return;
-    // }
-
-    // if (!newMessage.trim() || !farcasterUser?.name || !farcasterUser?.pfpUrl)
-    //   return;
+    if (
+      !newMessage.trim() ||
+      !farcasterUser?.name ||
+      !farcasterUser?.pfpUrl ||
+      !farcasterUser?.handle
+    )
+      return;
 
     const message: Comment = {
       id: crypto.randomUUID(),
@@ -79,21 +86,14 @@ export const ChatBox: React.FC<{
       timestamp: new Date().toISOString(),
     };
 
-    // if (socketRef.current) {
-    //   socketRef.current.emit("newComment", {
-    //     streamId: address,
-    //     ...message,
-    //   });
-    // }
-
-    setComments((prevComments) => [...prevComments, message]);
-
+    if (socketRef.current) {
+      socketRef.current.emit("newComment", {
+        streamId: address,
+        isAgent: isStreamedByAgent,
+        ...message,
+      });
+    }
     setNewMessage("");
-
-    const agentResponse = await axios.post(`/api/agent`, {
-      text: newMessage,
-      streamId: address,
-    });
   };
 
   const [isUserAtBottom, setIsUserAtBottom] = useState(true);
@@ -215,7 +215,7 @@ export const ChatBox: React.FC<{
         <h3 className="font-semibold text-white">Live Chat</h3>
       </div>
 
-      {/* {!isConnected && newMessage.trim().length > 1 && (
+      {!isConnected && newMessage.trim().length > 1 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center h-full bg-black/50 backdrop-blur-sm gap-4">
           <h1 className="text-white">You are not connected to Farcaster 🔌</h1>
         </div>
@@ -228,7 +228,7 @@ export const ChatBox: React.FC<{
             <QRCode uri={farcasterUser?.signer_approval_url} />
           </div>
         </div>
-      )} */}
+      )}
 
       <ul
         ref={commentsContainerRef}

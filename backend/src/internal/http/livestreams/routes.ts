@@ -18,7 +18,12 @@ export type Context = {
 };
 
 interface LivestreamManager {
-  createLivestream(handle: string, title: string, description: string): Promise<Livestream>;
+  createLivestream(
+    handle: string,
+    title: string,
+    description: string,
+    tokenAddress: string
+  ): Promise<Livestream>;
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
   getLivesForLanding(): Promise<Livestream[]>;

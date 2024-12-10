@@ -60,7 +60,7 @@ const TokenDetail = ({ address }: { address: string }) => {
   const [users, setUsers] = useState<string[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const isConnectedRoom = useRef(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [currentText, setCurrentText] = useState<string>("");
 
   const {
@@ -80,11 +80,9 @@ const TokenDetail = ({ address }: { address: string }) => {
 
   const isStreamer = stream?.handle === farcasterUser?.name;
 
-  const isStreamedByAgent = stream?.streamedByAgent;
+  const isStreamedByAgent = stream?.streamedByAgent || false;
 
   useEffect(() => {
-    if (!hasInteracted) return;
-    if (isConnectedRoom.current) return;
     console.log("Joining stream with streamId: ", address);
 
     socketRef.current = io(socketUrl, {
@@ -122,65 +120,58 @@ const TokenDetail = ({ address }: { address: string }) => {
         setComments(prevComments);
       });
 
-      socketRef.current.on("new-audio", ({ audio, text }) => {
-        setCurrentText(text);
+      if (isStreamedByAgent) {
+        socketRef.current.on("new-audio", ({ audio, text }) => {
+          setCurrentText(text);
 
-        const audioData = atob(audio);
-        const arrayBuffer = new ArrayBuffer(audioData.length);
-        const uint8Array = new Uint8Array(arrayBuffer);
+          const audioData = atob(audio);
+          const arrayBuffer = new ArrayBuffer(audioData.length);
+          const uint8Array = new Uint8Array(arrayBuffer);
 
-        for (let i = 0; i < audioData.length; i++) {
-          uint8Array[i] = audioData.charCodeAt(i);
-        }
+          for (let i = 0; i < audioData.length; i++) {
+            uint8Array[i] = audioData.charCodeAt(i);
+          }
 
-        const blob = new Blob([uint8Array], { type: "audio/mp3" });
-        const audioUrl = URL.createObjectURL(blob);
+          const blob = new Blob([uint8Array], { type: "audio/mp3" });
+          const audioUrl = URL.createObjectURL(blob);
 
-        if (audioRef.current) {
-          audioRef.current.src = audioUrl;
-          audioRef.current.play().catch(console.error);
-        }
+          if (audioRef.current) {
+            audioRef.current.src = audioUrl;
+            audioRef.current.play().catch(console.error);
+          }
 
-        const agentComment: Comment = {
-          id: crypto.randomUUID(),
-          handle: stream?.handle || "billi",
-          pfp: "/assets/stream/billi-pfp.png",
-          comment: text,
-          timestamp: new Date().toISOString(),
-        };
-
-        setComments((prevComments) => [...prevComments, agentComment]);
-
-        audioRef.current?.addEventListener("ended", () => {
-          URL.revokeObjectURL(audioUrl);
-          setTimeout(() => setCurrentText(""), 1000);
+          audioRef.current?.addEventListener("ended", () => {
+            URL.revokeObjectURL(audioUrl);
+            setTimeout(() => setCurrentText(""), 1000);
+          });
         });
-      });
+      }
     }
 
     return () => {
-      if (socketRef.current) {
+      if (socketRef.current && isConnectedRoom) {
         socketRef.current.emit("leaveStream", address);
         socketRef.current.off("userCount");
         socketRef.current.off("comment");
         socketRef.current.off("previousComments");
+        socketRef.current.off("new-audio");
         socketRef.current.disconnect();
       }
     };
-  }, [address, hasInteracted, stream?.handle]);
+  }, [address, stream?.handle, isStreamedByAgent, isConnectedRoom]);
 
-  if (!hasInteracted) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <button
-          onClick={() => setHasInteracted(true)}
-          className="bg-white text-black px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
-        >
-          Start Stream and Audio
-        </button>
-      </div>
-    );
-  }
+  // if (!hasInteracted) {
+  //   return (
+  //     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+  //       <button
+  //         onClick={() => setHasInteracted(true)}
+  //         className="bg-white text-black px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
+  //       >
+  //         Start Stream and Audio
+  //       </button>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="grid grid-cols-[320px_1fr] lg:grid-cols-[895px_1fr] gap-4 py-8">
@@ -270,6 +261,8 @@ const TokenDetail = ({ address }: { address: string }) => {
                   <AgentViewer
                     handle={stream.handle as string}
                     currentText={currentText}
+                    isMuted={isMuted}
+                    setIsMuted={setIsMuted}
                   />
                 ) : isStreamer ? (
                   <StreamHost stream={stream} />
@@ -292,6 +285,7 @@ const TokenDetail = ({ address }: { address: string }) => {
           setComments={setComments}
           isConnectedRoom={isConnectedRoom}
           socketRef={socketRef}
+          isStreamedByAgent={isStreamedByAgent}
         />
         {address && <TokenTrade tokenAddress={address as string} />}
       </div>

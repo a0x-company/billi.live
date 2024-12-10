@@ -11,6 +11,8 @@ import { connectedUsers } from "./sharedState";
 import { ActionType } from "./types";
 import { ProfilesService } from "@internal/profiles";
 import { FarcasterService } from "@internal/farcaster";
+import { PlayHtService } from "./play-ht";
+import { AgentService } from "@internal/agent/agent";
 
 let globalIO: SocketIOServer;
 
@@ -27,8 +29,14 @@ const comments: {
 
 export function setupSocket(server: Server, firestore: Firestore) {
   const liveStreamStorage = new LivestreamStorage(firestore);
+
   const profileService = new ProfilesService(firestore);
+
   const farcasterService = new FarcasterService(firestore);
+
+  const playHtService = new PlayHtService();
+
+  const agentService = new AgentService(firestore);
 
   console.log(
     "setting up socket.io for counting users in streams, handling comments in billi.live"
@@ -117,13 +125,51 @@ export function setupSocket(server: Server, firestore: Firestore) {
 
     socket.on(
       "newComment",
-      async ({ streamId, id, handle, pfp, comment, timestamp, parentIdentifier = null }) => {
+      async ({
+        streamId,
+        id,
+        handle,
+        pfp,
+        comment,
+        timestamp,
+        parentIdentifier = null,
+        isAgent = false,
+      }) => {
+        let time = performance.now();
+        /* interact with agent */
+        if (isAgent) {
+          (async () => {
+            try {
+              const agentResponse = await agentService.interactWithAgent(comment);
+              const text = agentResponse[0].text;
+
+              const audioPromise = playHtService.convertTextToSpeech(text).then((buffer) => {
+                const audioBase64 = buffer.toString("base64");
+                const io = getIO();
+                io.to(streamId).emit("new-audio", {
+                  audio: audioBase64,
+                  text: text,
+                });
+              });
+
+              audioPromise.catch((error) => {
+                console.error("Error converting text to speech:", error);
+              });
+              time = performance.now() - time;
+              console.log("time", time);
+            } catch (error) {
+              console.error("Error interacting with agent:", error);
+            }
+          })();
+        }
+
         if (!comments[streamId]) {
           comments[streamId] = [];
         }
 
         const newComment = { id, handle, pfp, comment, timestamp, parentIdentifier };
         comments[streamId].push(newComment);
+
         io.to(streamId).emit("comment", newComment);
         try {
           if (!handle) {
@@ -134,12 +180,10 @@ export function setupSocket(server: Server, firestore: Firestore) {
 
           const pubHash = await liveStreamStorage.getPubHashByStreamId(streamId);
 
-          if (!pubHash) {
-            throw new Error("No pubHash found for streamId: " + streamId);
+          if (!pubHash || !signerUuid) {
+            throw new Error("No pubHash or signerUuid found for streamId: " + streamId);
           }
-          if (!signerUuid) {
-            throw new Error("No signerUuid found for handle: " + handle);
-          }
+
           const actionType = ActionType.COMMENT;
           const postId = parentIdentifier ? parentIdentifier : pubHash;
 

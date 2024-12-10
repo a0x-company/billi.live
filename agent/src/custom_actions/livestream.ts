@@ -16,12 +16,14 @@ const createLivestream = async ({
   handle,
   title,
   description,
+  tokenAddress,
 }: {
   handle: string;
   title: string;
   description: string;
+  tokenAddress: string;
 }) => {
-  const body = { handle, title, description };
+  const body = { handle, title, description, tokenAddress };
   try {
     const response = await fetch(`${API_URL}/livestreams/create-livestream`, {
       method: "POST",
@@ -57,14 +59,14 @@ Respond with a polite and concise message requesting the following details:
 - Handle: Their unique username or identifier.
 - Title: The title of the livestream.
 - Description: A short description of the livestream.
-- Token Symbol: The token they want to associate with the livestream.
+- Token Address: The token address they want to associate with the livestream.
 
 Your response should be formatted as a message directly addressed to the user, without any extra context or explanation. Example format:
 "To proceed, please provide the following details:
 - Handle: Your unique username or identifier.
 - Title: The title of your livestream.
 - Description: A brief description of the livestream.
-- Token Symbol: The token associated with the livestream."
+- Token Address: The token address associated with the livestream."
 `;
 
 export const livestreamGeneration: Action = {
@@ -98,7 +100,7 @@ export const livestreamGeneration: Action = {
     - Handle
     - Title
     - Description
-    - Token Symbol
+    - Token Address
 
     Here is the message:
     ${message.content.text}
@@ -108,7 +110,7 @@ export const livestreamGeneration: Action = {
       "handle": "string",
       "title": "string",
       "description": "string",
-      "tokenSymbol": "string"
+      "tokenAddress": "string"
     }
     `;
 
@@ -128,7 +130,7 @@ export const livestreamGeneration: Action = {
       !parsedDetails.handle ||
       !parsedDetails.title ||
       !parsedDetails.description ||
-      !parsedDetails.tokenSymbol
+      !parsedDetails.tokenAddress
     ) {
       elizaLogger.log("Details are missing, asking for more information...");
       const messageIncompleteDetails = await generateText({
@@ -144,6 +146,7 @@ export const livestreamGeneration: Action = {
       handle: parsedDetails.handle,
       title: parsedDetails.title,
       description: parsedDetails.description,
+      tokenAddress: parsedDetails.tokenAddress,
     });
 
     if (response.message === "livestream created successfully") {
@@ -172,14 +175,14 @@ export const livestreamGeneration: Action = {
       {
         user: "{{agentName}}",
         content: {
-          text: "Please provide a title, description, and token symbol.",
+          text: "Please provide a title, description, and token address.",
           action: "GENERATE_LIVESTREAM_LINK",
         },
       },
       {
         user: "{{user1}}",
         content: {
-          text: "handle: justbilli, title: broken the internet, description: classic, tokenSymbol: BILLI",
+          text: "handle: justbilli, title: broken the internet, description: classic, tokenAddress: 0x1bc0c42215582d5a085795f4badbac3ff36d1bcb",
         },
       },
     ],
@@ -198,7 +201,7 @@ export const livestreamGeneration: Action = {
       {
         user: "{{user1}}",
         content: {
-          text: "handle: justbilli, title: destruyendo el internet con mi primer live, description: classic, tokenSymbol: BILLI",
+          text: "handle: justbilli, title: destruyendo el internet con mi primer live, description: classic, tokenAddress: 0x1bc0c42215582d5a085795f4badbac3ff36d1bcb",
         },
       },
     ],
