@@ -27,6 +27,8 @@ export function LiveChannels() {
     fetchLivestreams();
   }, []);
 
+  console.log("livestreams", livestreams);
+
   return (
     <div className="w-full px-6 py-8">
       <h2 className="text-xl font-semibold text-white mb-4">
@@ -34,7 +36,7 @@ export function LiveChannels() {
       </h2>
 
       <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-        {livestreams.map((livestream) => (
+        {livestreams?.map((livestream) => (
           <div
             key={livestream.livepeerInfo.streamId}
             className="flex-none w-80 cursor-pointer"

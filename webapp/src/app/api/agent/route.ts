@@ -10,8 +10,8 @@ export async function GET(req: Request) {
 
   try {
     const response = await axios.post(
-      `http://localhost:3000/${agentId}/message`,
-      //   `https://041d-2800-300-6272-f6b0-d12c-8c4c-543b-6c7d.ngrok-free.app/${agentId}/message`,
+      // `http://localhost:3000/${agentId}/message`,
+      `https://489e-2800-300-6272-f6b0-418c-80e1-717e-1354.ngrok-free.app/${agentId}/message`,
       {
         text: "Introduce yourself in an interesting way in english",
       }
@@ -30,16 +30,16 @@ export async function GET(req: Request) {
   }
 }
 
+const API_URL = process.env.API_URL;
+
 export async function POST(req: Request) {
   console.log("[POST][api/agent]");
 
   const { text, streamId } = await req.json();
 
-  const agentId = "8cc63a38-6ebd-0139-82ee-75727e511406";
-
   try {
     const response = await axios.post(
-      `http://localhost:8080/livestreams/convert-text-to-speech`,
+      `${API_URL}/livestreams/convert-text-to-speech`,
       {
         text: text,
         streamId: streamId,
