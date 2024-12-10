@@ -87,9 +87,13 @@ export class LivestreamService {
   public async getLivesForLanding() {
     const streams = await this.livestreamStorage.getLives();
 
+    console.log("streams", streams);
+
+    console.log("connectedUsers", connectedUsers);
+
     const streamsWithUserCount = streams.map((stream) => ({
       ...stream,
-      userCount: connectedUsers[stream.livepeerInfo.streamId]?.length || 0,
+      userCount: connectedUsers[stream.tokenAddress as string]?.length || 0,
     }));
 
     return streamsWithUserCount;

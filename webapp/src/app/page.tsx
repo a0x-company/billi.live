@@ -11,55 +11,8 @@ import { PiChartLineUpBold } from "react-icons/pi";
 export default function Home() {
   return (
     <div className="flex min-h-screen">
-      {/* Left navigation */}
-      <nav className="w-64 bg-black/80 backdrop-blur-sm border-r border-white/10 h-screen fixed left-0 top-0">
-        <div className="p-6">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-white">
-              <span className="text-purple-500">Billi</span>
-            </h2>
-          </div>
-
-          {/* Navigation list */}
-          <ul className="space-y-4">
-            <li>
-              <a
-                href="/"
-                className="flex items-center text-white hover:text-purple-500 transition-colors"
-              >
-                <svg
-                  className="w-5 h-5 mr-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                  />
-                </svg>
-                Inicio
-              </a>
-            </li>
-
-            {navigationItems.map((item, index) => (
-              <li key={index}>
-                <a
-                  href={item.path}
-                  className="flex items-center text-gray-400 hover:text-white transition-colors"
-                >
-                  {item.name}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </nav>
-
       {/* Main content with margin for both columns */}
-      <main className="flex-1 ml-64">
+      <main className="flex-1">
         <section className="relative min-h-screen">
           {/* Background video with overlay */}
           <div className="absolute inset-0 z-0">
@@ -81,7 +34,6 @@ export default function Home() {
             <LiveChannels />
           </div>
 
-          {/* Footer - ahora dentro de la sección con el video */}
           <div className="absolute bottom-0 left-0 right-0 z-20">
             <footer className="bg-black/80 backdrop-blur-sm border-t border-white/10 py-4">
               <div className="container mx-auto px-4">

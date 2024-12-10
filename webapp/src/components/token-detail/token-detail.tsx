@@ -24,12 +24,14 @@ import StreamHost from "../stream/stream-host";
 import StreamViewer from "../stream/stream-viewer";
 import Chart from "./chart";
 import { TokenTrade } from "./token-trade";
-
+import { AgentViewer } from "../stream/agent-viewer";
 // icons
 import { Heart } from "lucide-react";
 
 // constants
 import { STREAMING_COUNTER_SERVER_URL } from "@/constants/stream";
+
+// types
 import { Comment, Livestream, LivestreamError } from "@/types";
 
 const socketUrl = STREAMING_COUNTER_SERVER_URL;
@@ -61,9 +63,10 @@ const TokenDetail = ({ address }: { address: string }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const isConnectedRoom = useRef(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [currentText, setCurrentText] = useState<string>("");
 
   useEffect(() => {
-    if (!hasInteracted) return; // No conectar socket hasta que haya interacción
+    if (!hasInteracted) return;
     if (isConnectedRoom.current) return;
     console.log("Joining stream with streamId: ", address);
 
@@ -102,8 +105,9 @@ const TokenDetail = ({ address }: { address: string }) => {
         setComments(prevComments);
       });
 
-      socketRef.current.on("new-audio", ({ audio }) => {
-        // Convertir el base64 a blob
+      socketRef.current.on("new-audio", ({ audio, text }) => {
+        setCurrentText(text);
+
         const audioData = atob(audio);
         const arrayBuffer = new ArrayBuffer(audioData.length);
         const uint8Array = new Uint8Array(arrayBuffer);
@@ -115,17 +119,14 @@ const TokenDetail = ({ address }: { address: string }) => {
         const blob = new Blob([uint8Array], { type: "audio/mp3" });
         const audioUrl = URL.createObjectURL(blob);
 
-        console.log("New audio voice for justbilli");
-
-        // Reproducir el audio
         if (audioRef.current) {
           audioRef.current.src = audioUrl;
           audioRef.current.play().catch(console.error);
         }
 
-        // Limpiar la URL cuando termine
         audioRef.current?.addEventListener("ended", () => {
           URL.revokeObjectURL(audioUrl);
+          setTimeout(() => setCurrentText(""), 2000);
         });
       });
     }
@@ -157,6 +158,10 @@ const TokenDetail = ({ address }: { address: string }) => {
   });
 
   const isStreamer = stream?.handle === farcasterUser?.name;
+
+  const isStreamedByAgent = stream?.streamedByAgent;
+
+  console.log("isStreamedByAgent", isStreamedByAgent);
 
   if (!hasInteracted) {
     return (
@@ -238,7 +243,9 @@ const TokenDetail = ({ address }: { address: string }) => {
               </div>
 
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                {isStreamer ? (
+                {isStreamedByAgent ? (
+                  <AgentViewer handle={stream.handle as string} />
+                ) : isStreamer ? (
                   <StreamHost stream={stream} />
                 ) : (
                   <StreamViewer stream={stream} />
@@ -262,6 +269,13 @@ const TokenDetail = ({ address }: { address: string }) => {
         />
         {address && <TokenTrade tokenAddress={address as string} />}
       </div>
+
+      {/* Mostrar el texto actual si existe */}
+      {currentText && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-6 py-3 rounded-lg shadow-lg whitespace-nowrap overflow-hidden text-ellipsis max-w-[90vw]">
+          {currentText}
+        </div>
+      )}
     </div>
   );
 };

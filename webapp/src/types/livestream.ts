@@ -19,6 +19,8 @@ export interface Livestream {
   description: string;
   livepeerInfo: LivepeerInfo;
   status: string;
+  streamedByAgent?: boolean;
+  userCount: number;
 }
 
 export type StreamResponse = Livestream | LivestreamError;

@@ -132,4 +132,5 @@ export type Livestream = {
   castInFarcaster?: boolean;
   description?: string;
   pubHash?: string;
+  streamedByAgent?: boolean;
 };

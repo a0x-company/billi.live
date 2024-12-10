@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 export async function GET(req: Request) {
   console.log("[GET][api/agent]");
 
-  const agentId = "0ee6bd2a-636a-05b8-af03-342372e792bd";
+  const agentId = "8cc63a38-6ebd-0139-82ee-75727e511406";
 
   try {
     const response = await axios.post(

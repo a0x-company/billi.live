@@ -138,6 +138,8 @@ export class LivestreamStorage {
           createdAt: data.createdAt,
           castInFarcaster: data.castInFarcaster,
           status: data.status,
+          tokenAddress: data.tokenAddress,
+          streamedByAgent: data.streamedByAgent,
         };
       });
 
@@ -168,6 +170,7 @@ export class LivestreamStorage {
           livepeerInfo: data.livepeerInfo,
           createdAt: data.createdAt,
           status: data.status,
+          streamedByAgent: data.streamedByAgent,
         };
       }
 
