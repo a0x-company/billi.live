@@ -1,12 +1,23 @@
 // components
+import { useState } from "react";
 import { AudioWave } from "./audio-wave";
+
+// icons
+import { Volume2Icon, VolumeOff } from "lucide-react";
 
 type AgentViewerProps = {
   handle: string;
   currentText?: string;
+  isMuted: boolean;
+  setIsMuted: (isMuted: boolean) => void;
 };
 
-export const AgentViewer = ({ handle, currentText }: AgentViewerProps) => {
+export const AgentViewer = ({
+  handle,
+  currentText,
+  isMuted,
+  setIsMuted,
+}: AgentViewerProps) => {
   return (
     <div className="w-full h-full flex items-center justify-center text-white relative">
       <div className="absolute top-3 right-3 bg-red-600 text-white text-xs px-2 py-1 rounded">

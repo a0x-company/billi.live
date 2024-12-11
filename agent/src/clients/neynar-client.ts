@@ -10,6 +10,8 @@ import {
   shouldRespondFooter,
   generateShouldRespond,
   AgentRuntime,
+  Memory,
+  Action,
 } from "@ai16z/eliza";
 import { composeContext } from "@ai16z/eliza";
 import dotenv from "dotenv";
@@ -417,15 +419,11 @@ export class NeynarClient extends EventEmitter {
           farcasterShouldRespondTemplate,
       });
 
-      elizaLogger.log("Should respond context:", shouldRespondContext);
-
       const shouldRespond = await generateShouldRespond({
         runtime: this.runtime,
         context: shouldRespondContext,
         modelClass: ModelClass.SMALL,
       });
-
-      elizaLogger.log("Should respond:", shouldRespond);
 
       if (shouldRespond !== "RESPOND") {
         elizaLogger.log("Omitiendo respuesta...");
@@ -439,8 +437,6 @@ export class NeynarClient extends EventEmitter {
           farcasterMessageTemplate,
       });
 
-      elizaLogger.log("Context:", context);
-
       const response = await generateMessageResponse({
         runtime: this.runtime,
         context,
@@ -448,7 +444,12 @@ export class NeynarClient extends EventEmitter {
       });
 
       const callback = async (content: any) => {
+        console.log("=== CALLBACK CONTENT ===");
+        console.log("Content received:", JSON.stringify(content, null, 2));
+
         const reply = await this.replyToCast(content.text, payload.data.hash);
+
+        console.log("Reply from Farcaster:", JSON.stringify(reply, null, 2));
 
         if (reply) {
           const memory = {
@@ -463,28 +464,42 @@ export class NeynarClient extends EventEmitter {
             createdAt: Date.now(),
           };
 
+          console.log("New Memory Created:", JSON.stringify(memory, null, 2));
           await this.runtime.messageManager.createMemory(memory);
           return [memory];
         }
-
         return [];
       };
 
       if (response?.text) {
-        const responseMemories = await callback(response);
+        const responseMemory: Memory = {
+          id: stringToUuid(response.text),
+          userId: this.runtime.agentId,
+          agentId: this.runtime.agentId,
+          roomId: memory.roomId,
+          content: {
+            text: response.text,
+            action: response?.action,
+          },
+          createdAt: Date.now(),
+        };
 
-        elizaLogger.log("Response memories:", responseMemories);
+        const actionResult: any = await this.runtime.processActions(
+          memory,
+          [responseMemory],
+          state2,
+          callback
+        );
 
-        if (response.text.length > 0) {
-          await this.runtime.processActions(
-            memory,
-            responseMemories,
-            state2,
-            callback
-          );
+        if (
+          !actionResult ||
+          !responseMemory.content?.action
+            ?.toLowerCase()
+            .includes("generatelivestream")
+        ) {
+          const responseMemories = await callback(response);
+          elizaLogger.success("Respuesta publicada exitosamente");
         }
-
-        elizaLogger.success("Respuesta publicada exitosamente");
       }
     } catch (error) {
       elizaLogger.error("Error en handleMention:", error);
@@ -618,15 +633,11 @@ export class NeynarClient extends EventEmitter {
         template: farcasterShouldRespondToReplyTemplate,
       });
 
-      elizaLogger.log("Should respond context:", shouldRespondContext);
-
       const shouldRespond = await generateShouldRespond({
         runtime: this.runtime,
         context: shouldRespondContext,
         modelClass: ModelClass.SMALL,
       });
-
-      elizaLogger.log("Should respond:", shouldRespond);
 
       if (shouldRespond !== "RESPOND") {
         elizaLogger.log("Omitiendo respuesta al reply...");
@@ -638,15 +649,11 @@ export class NeynarClient extends EventEmitter {
         template: farcasterReplyMessageTemplate,
       });
 
-      elizaLogger.log("Context:", context);
-
       const response = await generateMessageResponse({
         runtime: this.runtime,
         context,
         modelClass: ModelClass.SMALL,
       });
-
-      elizaLogger.log("Response:", response);
 
       const callback = async (content: any) => {
         const reply = await this.replyToCast(content.text, payload.data.hash);
@@ -655,7 +662,6 @@ export class NeynarClient extends EventEmitter {
 
       if (response?.text) {
         const responseMemories = await callback(response);
-        elizaLogger.log("Response memories:", responseMemories);
         elizaLogger.success("Respuesta publicada exitosamente");
 
         // Procesar acciones después de enviar la respuesta
