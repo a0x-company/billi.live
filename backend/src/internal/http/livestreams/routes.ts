@@ -32,6 +32,7 @@ interface LivestreamManager {
   getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
   convertTextToSpeech(text: string): Promise<any>;
   publishLivestream(livestream: Livestream): Promise<string | void>;
+  talkToAgent(message: string): Promise<string>;
 }
 
 export function livestreamsRoutes(router: Express, ctx: Context) {

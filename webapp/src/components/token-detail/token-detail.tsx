@@ -24,6 +24,7 @@ import StreamViewer from "../stream/stream-viewer";
 import Chart from "./chart";
 import { TokenTrade } from "./token-trade";
 import { AgentViewer } from "../stream/agent-viewer";
+
 // icons
 import { Heart } from "lucide-react";
 

@@ -6,7 +6,9 @@ import { Context } from "./routes";
 export const createLivestreamHandler = (ctx: Context) => {
   return async (req: Request, res: Response) => {
     const { handle, title, description, tokenAddress, pfpUrl, pubHash } = req.body;
+
     console.log("req.body", req.body);
+
     if (!handle) {
       return res.status(400).json({
         error: "handle is required in the body",

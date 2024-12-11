@@ -17,6 +17,7 @@ import {
 
 // internal
 import { connectedUsers } from "./sharedState";
+import { AgentService } from "@internal/agents";
 
 interface LivestreamManager {
   saveLivestream(
@@ -54,6 +55,10 @@ interface FarcasterManager {
   ): Promise<string | void>;
 }
 
+interface AgentManager {
+  talkToAgent(message: string): Promise<string>;
+}
+
 export class LivestreamService {
   private livestreamStorage: LivestreamManager;
 
@@ -65,6 +70,8 @@ export class LivestreamService {
 
   private farcasterSvc: FarcasterManager;
 
+  private agentService: AgentManager;
+
   constructor(
     firestore: Firestore,
     profileManager: ProfileManager,
@@ -75,6 +82,7 @@ export class LivestreamService {
     this.playHtService = new PlayHtService();
     this.profileManager = profileManager;
     this.farcasterSvc = farcasterSvc;
+    this.agentService = new AgentService();
   }
 
   public async createLivestream(
@@ -188,5 +196,9 @@ export class LivestreamService {
     );
 
     return identifier;
+  }
+
+  public async talkToAgent(message: string): Promise<string> {
+    return await this.agentService.talkToAgent(message);
   }
 }
