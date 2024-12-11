@@ -1,9 +1,9 @@
-// components
+// react
 import { useState, useEffect, useRef } from "react";
-import { AudioWave } from "./audio-wave";
 
-// icons
-import { Volume2Icon, VolumeOff } from "lucide-react";
+// components
+import { AudioWave } from "./audio-wave";
+import { VolumeSlider } from "./volume-slider";
 
 type AgentViewerProps = {
   handle: string;
@@ -33,13 +33,8 @@ export const AgentViewer = ({
     }
   }, [isMuted]);
 
-  const handleMuteToggle = () => {
-    setIsMuted(!isMuted);
-  };
-
   return (
     <div className="w-full h-full flex items-center justify-center text-white relative">
-      {/* Video de fondo */}
       <div className="absolute inset-0 z-0">
         <video
           src="/assets/landing/static.mp4"
@@ -60,16 +55,13 @@ export const AgentViewer = ({
           className="hidden"
         />
 
-        <button
-          onClick={handleMuteToggle}
-          className="absolute top-3 left-3 bg-gray-800/50 p-2 rounded-full hover:bg-gray-800 transition-colors"
-        >
-          {isMuted ? (
-            <VolumeOff className="w-5 h-5" />
-          ) : (
-            <Volume2Icon className="w-5 h-5" />
-          )}
-        </button>
+        <div className="absolute top-3 left-3">
+          <VolumeSlider
+            audioRef={backgroundMusicRef}
+            isMuted={isMuted}
+            setIsMuted={setIsMuted}
+          />
+        </div>
 
         <div className="absolute top-3 right-3 bg-red-600 text-white text-xs px-2 py-1 rounded">
           <p className="font-black">LIVE</p>
