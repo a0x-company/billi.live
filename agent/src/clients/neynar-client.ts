@@ -6,7 +6,6 @@ import {
   stringToUuid,
   generateMessageResponse,
   ModelClass,
-  messageCompletionFooter,
   shouldRespondFooter,
   generateShouldRespond,
   AgentRuntime,
@@ -60,7 +59,8 @@ interface WebhookPayload {
     };
   };
 }
-
+const messageCompletionFooter =
+  '\nResponse format should be formatted in a JSON block like this:\n```json\n{ "user": "{{agentName}}", "text": string, "action": "string" }\n```\n\nIMPORTANT:\n- The text field should NEVER include the action\n- The action goes ONLY in the action field\n\nExamples:\nBAD: { "user": "{{agentName}}", "text": "going silent (MUTE_ROOM)", "action": "MUTE_ROOM" }\nBAD: { "user": "{{agentName}}", "text": "let\'s talk more about that (CONTINUE)", "action": "CONTINUE" }\nGOOD: { "user": "{{agentName}}", "text": "going silent", "action": "MUTE_ROOM" }\nGOOD: { "user": "{{agentName}}", "text": "let\'s talk more about that", "action": "CONTINUE" }';
 const farcasterMessageTemplate =
   `
 # Sobre {{agentName}}
@@ -210,6 +210,8 @@ Estilo de interacción: {{interactionStyle}}
 
 # Instrucciones
 Decide si responder basado en:
+IMPORTANTE si el sender es "clanker" siempre se debe responder, si en su mensaje habla de
+esta creando o deployando, un token, si esta hablando de otra cosa proceder con las demas instrucciones para decidir
 1. ¿Es el mensaje apropiado y seguro para responder?
 2. ¿Requiere o merece una respuesta?
 3. ¿Es relevante para {{agentName}} y el contexto del canal?
@@ -284,6 +286,42 @@ export class NeynarClient extends EventEmitter {
       }
     });
   }
+  private mapRepliesRecursively(cast: any) {
+    console.log("\n=== PROCESANDO CAST ===");
+    console.log("Autor:", cast.author.username || cast.author.display_name);
+    console.log("Texto:", cast.text);
+    console.log("Timestamp:", cast.timestamp);
+    console.log("Tiene replies:", cast.direct_replies?.length || 0);
+
+    let messages = [
+      {
+        id: cast.hash,
+        author: cast.author.username || cast.author.display_name,
+        pfp_url: cast.author.pfp_url,
+        text: cast.text,
+        timestamp: cast.timestamp,
+      },
+    ];
+
+    if (cast.direct_replies && cast.direct_replies.length > 0) {
+      console.log(
+        `\nProcesando ${cast.direct_replies.length} respuestas directas de ${cast.author.username}:`
+      );
+      for (const reply of cast.direct_replies) {
+        console.log("\n-> Entrando en respuesta de:", reply.author.username);
+        const nestedReplies = this.mapRepliesRecursively(reply);
+        console.log(
+          "<- Saliendo de respuesta, obtuve",
+          nestedReplies.length,
+          "mensajes"
+        );
+        messages = [...messages, ...nestedReplies];
+      }
+    }
+
+    console.log("\nMensajes acumulados en este nivel:", messages.length);
+    return messages;
+  }
 
   private async handleMention(payload: WebhookPayload) {
     try {
@@ -344,18 +382,15 @@ export class NeynarClient extends EventEmitter {
           }
         );
 
-        if (conversationResponse.ok) {
-          conversation = await conversationResponse.json();
-          conversationHistory = [
-            ...(conversation.conversation.chronological_parent_casts || []),
-            conversation.conversation.cast,
-            ...(conversation.conversation.cast.direct_replies || []),
-          ].map((cast) => ({
-            author: cast.author.display_name || cast.author.username,
-            text: cast.text,
-            timestamp: cast.timestamp,
-          }));
+        if (!conversationResponse.ok) {
+          throw new Error("Error obteniendo la conversación");
         }
+
+        conversation = await conversationResponse.json();
+
+        conversationHistory = this.mapRepliesRecursively(
+          conversation.conversation.cast
+        );
       }
 
       const userId = stringToUuid(payload.data.author.username);
@@ -542,7 +577,7 @@ export class NeynarClient extends EventEmitter {
         }
       }
     } catch (error) {
-      elizaLogger.error("Error en handleMention:", error);
+      console.log("Error en handleMention:", error);
       throw error;
     }
   }
@@ -575,7 +610,7 @@ export class NeynarClient extends EventEmitter {
       );
 
       if (alreadyResponded) {
-        elizaLogger.log("⚠️ Reply ya respondida, hash:", payload.data.hash);
+        elizaLogger.log("⚠️ Cast ya respondido, hash:", payload.data.hash);
         return;
       }
 
@@ -599,15 +634,10 @@ export class NeynarClient extends EventEmitter {
         }
 
         conversation = await conversationResponse.json();
-        conversationHistory = [
-          ...(conversation.conversation.chronological_parent_casts || []),
-          conversation.conversation.cast,
-          ...(conversation.conversation.cast.direct_replies || []),
-        ].map((cast) => ({
-          author: cast.author.display_name || cast.author.username,
-          text: cast.text,
-          timestamp: cast.timestamp,
-        }));
+
+        conversationHistory = this.mapRepliesRecursively(
+          conversation.conversation.cast
+        );
       }
 
       const userId = stringToUuid(payload.data.author.username);
@@ -629,6 +659,7 @@ export class NeynarClient extends EventEmitter {
             conversationHistory,
             channel: payload.data.channel,
             reactions: conversation?.conversation?.cast?.reactions,
+            embeds: payload.data.embeds,
           },
         },
         createdAt: Date.now(),
@@ -874,6 +905,7 @@ export class NeynarClient extends EventEmitter {
                 mentioned_fids: [this.config.fid],
                 parent_author_fids: [this.config.fid],
                 exclude_author_fids: [this.config.fid],
+                author_fids: [874542],
               },
             },
           }),
