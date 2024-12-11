@@ -21,6 +21,8 @@ export interface Livestream {
   status: string;
   streamedByAgent?: boolean;
   userCount: number;
+  pfpUrl?: string;
+  pubHash?: string;
 }
 
 export type StreamResponse = Livestream | LivestreamError;

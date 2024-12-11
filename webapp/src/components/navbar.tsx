@@ -42,11 +42,15 @@ const Navbar = () => {
           user: farcasterUser,
         });
         if (response.status === 200) {
+          const userWithStatus = {
+            ...farcasterUser,
+            ...response.data,
+          };
           localStorage.setItem(
             LOCAL_STORAGE_KEYS.FARCASTER_USER,
-            JSON.stringify(response.data)
+            JSON.stringify(userWithStatus)
           );
-          setFarcasterUser(response.data);
+          setFarcasterUser(userWithStatus);
         }
       } catch (error) {
         console.error("API Call failed", error);

@@ -10,7 +10,6 @@ export interface FarcasterUser {
   pfpUrl?: string;
   handle?: string;
   displayName?: string;
-  name?: string;
 }
 
 interface FarcasterUserContextProps {
@@ -57,14 +56,19 @@ export const FarcasterUserProvider = ({
   }, [setFarcasterUser, setIsConnected]);
 
   useEffect(() => {
-    if (session?.user) {
-      setFarcasterUser((prevUser) => ({
-        ...prevUser,
-        pfpUrl: session.user?.image || undefined,
-        handle: session.user?.name || undefined,
-      }));
+    if (session?.user && !farcasterUser?.fid) {
+      if (
+        farcasterUser?.pfpUrl !== session.user?.image ||
+        farcasterUser?.handle !== session.user?.name
+      ) {
+        setFarcasterUser((prevUser) => ({
+          ...prevUser,
+          pfpUrl: session.user?.image || undefined,
+          handle: session.user?.name || undefined,
+        }));
+      }
     }
-  }, [session, setFarcasterUser]);
+  }, [session, setFarcasterUser, farcasterUser]);
 
   return (
     <FarcasterUserContext.Provider

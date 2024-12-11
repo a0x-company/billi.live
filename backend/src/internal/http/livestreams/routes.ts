@@ -22,7 +22,9 @@ interface LivestreamManager {
     handle: string,
     title: string,
     description: string,
-    tokenAddress: string
+    tokenAddress: string,
+    pubHash: string,
+    pfpUrl?: string
   ): Promise<Livestream>;
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;

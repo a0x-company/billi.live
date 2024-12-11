@@ -5,7 +5,7 @@ import { Context } from "./routes";
 
 export const createLivestreamHandler = (ctx: Context) => {
   return async (req: Request, res: Response) => {
-    const { handle, title, description, tokenAddress } = req.body;
+    const { handle, title, description, tokenAddress, pfpUrl, pubHash } = req.body;
 
     if (!handle) {
       return res.status(400).json({
@@ -35,7 +35,9 @@ export const createLivestreamHandler = (ctx: Context) => {
       handle,
       title,
       description,
-      tokenAddress
+      tokenAddress,
+      pubHash,
+      pfpUrl
     );
 
     return res.status(200).json({

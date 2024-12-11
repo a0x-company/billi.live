@@ -24,7 +24,9 @@ interface LivestreamManager {
     title: string,
     description: string,
     livepeerInfo: StreamInfo,
-    tokenAddress: string
+    tokenAddress: string,
+    pubHash: string,
+    pfpUrl?: string
   ): Promise<void>;
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
@@ -79,7 +81,9 @@ export class LivestreamService {
     handle: string,
     title: string,
     description: string,
-    tokenAddress: string
+    tokenAddress: string,
+    pubHash: string,
+    pfpUrl?: string
   ): Promise<Livestream> {
     const livepeerResponse = await this.livepeerService.createLivestream(title, true);
 
@@ -96,7 +100,9 @@ export class LivestreamService {
       title,
       description,
       streamInfo,
-      tokenAddress
+      tokenAddress,
+      pubHash,
+      pfpUrl
     );
 
     const livestream: Livestream = {
@@ -143,6 +149,7 @@ export class LivestreamService {
     return await this.playHtService.convertTextToSpeech(text);
   }
 
+  /* NOT USED YET */
   public async publishLivestream(livestream: Livestream): Promise<string | void> {
     console.log("PUBLISHING LIVESTREAM");
     if (!livestream.handle) {
