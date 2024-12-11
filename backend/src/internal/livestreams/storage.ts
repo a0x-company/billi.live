@@ -2,7 +2,7 @@
 import { Firestore } from "@google-cloud/firestore";
 
 // types
-import { Livestream, StreamInfo } from "./types";
+import { CastInFarcaster, Livestream, StreamInfo } from "./types";
 
 export class LivestreamStorage {
   firestore: Firestore;
@@ -20,7 +20,8 @@ export class LivestreamStorage {
     livepeerInfo: StreamInfo,
     tokenAddress: string,
     pubHash: string,
-    pfpUrl?: string
+    pfpUrl?: string,
+    castInFarcaster?: CastInFarcaster
   ): Promise<void> {
     try {
       const countDocRef = this.firestore.collection(this.LIVES_COLLECTION).doc("count");
@@ -51,6 +52,7 @@ export class LivestreamStorage {
         tokenAddress,
         pfpUrl: pfpUrl || "",
         pubHash: pubHash || "",
+        castInFarcaster: castInFarcaster || null,
       });
 
       await countDocRef.update({ total: newCount });
@@ -228,11 +230,10 @@ export class LivestreamStorage {
     }
   }
 
-  public async getPubHashByStreamId(streamId: string): Promise<string | null> {
+  public async getPubHashByTokenAddress(tokenAddress: string): Promise<string | null> {
     const querySnapshot = await this.firestore
       .collection(this.LIVES_COLLECTION)
-      // .where("livepeerInfo.streamId", "==", streamId) // TODO: change to livepeerInfo.streamId
-      .where("tokenAddress", "==", streamId)
+      .where("tokenAddress", "==", tokenAddress)
       .limit(1)
       .get();
 

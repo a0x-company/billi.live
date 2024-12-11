@@ -69,6 +69,7 @@ export const ChatBox: React.FC<{
       setOpenQrSigner(true);
       return;
     }
+
     if (!newMessage.trim() || !farcasterUser?.pfpUrl || !farcasterUser?.handle)
       return;
 
@@ -79,7 +80,7 @@ export const ChatBox: React.FC<{
       comment: newMessage.trim(),
       timestamp: new Date().toISOString(),
     };
-
+    console.log("message", message);
     if (socketRef.current) {
       socketRef.current.emit("newComment", {
         streamId: address,

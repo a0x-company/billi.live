@@ -178,7 +178,8 @@ export function setupSocket(server: Server, firestore: Firestore) {
 
           const signerUuid = await profileService.getSignerUuid(handle);
 
-          const pubHash = await liveStreamStorage.getPubHashByStreamId(streamId);
+          const tokenAddressNormalized = streamId.toLowerCase();
+          const pubHash = await liveStreamStorage.getPubHashByTokenAddress(tokenAddressNormalized);
 
           if (!pubHash || !signerUuid) {
             throw new Error("No pubHash or signerUuid found for streamId: " + streamId);
