@@ -212,6 +212,7 @@ export class NeynarClient extends EventEmitter {
   private config: NeynarConfig;
   private webhookId: string | null = null;
   private webhookSecret: string | null = null;
+  private hasRespondedMention: Map<string, boolean> = new Map();
 
   constructor(runtime: any, config: NeynarConfig, port: number = 3001) {
     super();
@@ -265,6 +266,26 @@ export class NeynarClient extends EventEmitter {
     try {
         elizaLogger.log('Manejando mención de Farcaster...');
         
+        // Verificar menciones duplicadas
+        const roomId = stringToUuid(`farcaster-${payload.data.hash}`);
+        const mentionMemories = await this.runtime.messageManager.getMemories({
+            roomId: roomId,
+            agentId: this.runtime.agentId
+        });
+
+        elizaLogger.log('🔍 Verificando menciones en roomId:', roomId);
+        elizaLogger.log('📝 Memorias existentes:', JSON.stringify(mentionMemories.map(m => m.content), null, 2));
+
+        const alreadyResponded = mentionMemories.some(memory => 
+          Array.isArray(memory.content?.responded_mentions) && 
+          memory.content.responded_mentions.includes(payload.data.hash)
+      );
+
+        if (alreadyResponded) {
+            elizaLogger.log('⚠️ Mención ya respondida, hash:', payload.data.hash);
+            return;
+        }
+        
         const wasAgentMentioned = payload.data.mentioned_profiles.some(
             profile => profile.fid === this.config.fid
         );
@@ -306,7 +327,6 @@ export class NeynarClient extends EventEmitter {
             }
         }
 
-        const roomId = stringToUuid(`farcaster-${payload.data.hash}`);
         const userId = stringToUuid(payload.data.author.username);
 
         const memory = {
@@ -317,6 +337,7 @@ export class NeynarClient extends EventEmitter {
             content: {
                 text: payload.data.text,
                 source: 'farcaster',
+                responded_mentions: [payload.data.hash], 
                 metadata: {
                     castHash: payload.data.hash,
                     threadHash: payload.data.thread_hash,
@@ -332,6 +353,7 @@ export class NeynarClient extends EventEmitter {
             createdAt: Date.now()
         };
 
+        elizaLogger.debug('💾 Guardando memoria inicial:', JSON.stringify(memory.content, null, 2));
         await this.runtime.messageManager.createMemory(memory);
 
         const state = await this.runtime.composeState(memory, {
@@ -398,7 +420,7 @@ export class NeynarClient extends EventEmitter {
             state: state2,
             template: this.runtime.character.templates?.farcasterMessageHandlerTemplate || farcasterMessageTemplate
         });
-
+        console.log('=== CONTEXT ===', context);
         const response = await generateMessageResponse({
             runtime: this.runtime,
             context,
@@ -418,7 +440,7 @@ export class NeynarClient extends EventEmitter {
             text: reply?.content?.text,
             roomId: reply?.roomId
           });
-          
+          this.hasRespondedMention.set(payload.data.hash, true);
           if (reply) {
               const memory = {
                   id: reply.id,
@@ -457,17 +479,17 @@ export class NeynarClient extends EventEmitter {
             createdAt: Date.now()
         };
     
-        const actionResult :any = await this.runtime.processActions(
+        await this.runtime.processActions(
             memory,
             [responseMemory], 
             state2,
             callback
         );
     
-        if (!actionResult || !responseMemory.content?.action?.toLowerCase().includes('generatelivestream')) {
-            const responseMemories = await callback(response);
-            elizaLogger.success('Respuesta publicada exitosamente');
-        }
+        if (!this.hasRespondedMention.has(payload.data.hash)) {
+          await callback(response);
+          elizaLogger.success('Respuesta publicada exitosamente');
+      }
     }
     } catch (error) {
         elizaLogger.error('Error en handleMention:', error);

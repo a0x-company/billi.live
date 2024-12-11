@@ -9,6 +9,12 @@ import {
   State,
 } from "@ai16z/eliza";
 
+interface MessageMetadata {
+  author?: {
+    username: string;
+  };
+}
+
 const livestreamUrl = "https://billi.live";
 const API_URL = process.env.API_URL;
 
@@ -90,22 +96,27 @@ export const livestreamGeneration: Action = {
     callback: HandlerCallback
   ) => {
     elizaLogger.log("Generating livestream link...");
+    
+    // Obtener el username del autor de la metadata
+    const username = (message.content.metadata as MessageMetadata)?.author?.username || "";
 
     const context = `
     Extract the following information from the message and respond with the extracted information in the following JSON format. 
-    IMPORTANT: If any field is missing or not explicitly stated in the message, return it as an empty string (""). Do not infer or assume any value.
-    The fields to extract are:
-    - Handle
-    - Title
-    - Description
-    - Token Symbol
+    IMPORTANT: 
+    - If any field is missing or not explicitly stated in the message, return it as an empty string ("").
+    - Look for variations of the fields. For example:
+      * Title might appear as: "title:", "título:", "name:", "nombre:"
+      * Description might appear as: "description:", "desc:", "descripción:", "about:"
+      * Token Symbol might appear as: "token:", "tokenSymbol:", "symbol:", "símbolo:"
+    - Extract only the value after the colon (:) for each field
+    - Remove any leading/trailing whitespace
+    - If a field appears multiple times, use the last occurrence
 
     Here is the message:
     ${message.content.text}
 
     Only respond with the extracted information in the following JSON format (without any other text):
     {
-      "handle": "string",
       "title": "string",
       "description": "string",
       "tokenSymbol": "string"
@@ -120,12 +131,19 @@ export const livestreamGeneration: Action = {
     });
 
     const parsedDetails = JSON.parse(details);
+    
+    // Agregar el handle automáticamente
+    parsedDetails.handle = username;
 
     elizaLogger.log("Livestream details:", details, parsedDetails);
 
+    // Si el token es una dirección completa, extraer solo el símbolo
+    if (parsedDetails.tokenSymbol?.startsWith('0x')) {
+      parsedDetails.tokenSymbol = 'BILLI'; // Default token si es una dirección
+    }
+
     if (
       !details ||
-      !parsedDetails.handle ||
       !parsedDetails.title ||
       !parsedDetails.description ||
       !parsedDetails.tokenSymbol
@@ -149,15 +167,29 @@ export const livestreamGeneration: Action = {
     if (response.message === "livestream created successfully") {
       const livestreamLink = `${livestreamUrl}/token/${getRandomTokenAddress()}`;
       elizaLogger.log("Livestream link generated:", livestreamLink);
+      
       const responseWithLivestreamLink = await generateText({
         runtime: _runtime,
-        context: `Identify the language of the message and respond in the same language: ${message.content.text}.
-        IMPORTANT: If the message is in Spanish, respond in Spanish. If the message is in English, respond in English. NOT RESPOND LANGUAGE IDENTIFICATION. Respond with short sentences.
-        Livestream link generated: ${livestreamLink}`,
+        context: `
+        Identify the language of the message and respond in the same language: ${message.content.text}
+        IMPORTANT: 
+        - If the message is in Spanish, respond in Spanish. 
+        - If the message is in English, respond in English. 
+        - DO NOT mention language identification.
+        - Use a friendly and excited tone.
+        - Keep the response short and direct.
+        
+        Include this information in your response:
+        - Livestream link: ${livestreamLink}
+        - Title: ${parsedDetails.title}
+        - Token: ${parsedDetails.tokenSymbol}
+        `,
         modelClass: ModelClass.SMALL,
         stop: ["\n"],
       });
-      callback({
+
+      console.log('=== RESPONSE WITH LIVESTREAM LINK ===', responseWithLivestreamLink);
+      await callback({
         text: responseWithLivestreamLink,
       });
       return;
