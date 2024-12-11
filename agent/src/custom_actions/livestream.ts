@@ -13,6 +13,9 @@ interface MessageMetadata {
   author?: {
     username: string;
   };
+  embeds?: {
+    url: string;
+  }[];
 }
 
 const livestreamUrl = "https://billi.live";
@@ -88,6 +91,7 @@ export const livestreamGeneration: Action = {
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     return true;
   },
+
   handler: async (
     _runtime: IAgentRuntime,
     message: Memory,
@@ -96,54 +100,174 @@ export const livestreamGeneration: Action = {
     callback: HandlerCallback
   ) => {
     elizaLogger.log("Generating livestream link...");
-    
-    // Obtener el username del autor de la metadata
-    const username = (message.content.metadata as MessageMetadata)?.author?.username || "";
 
-    const context = `
-    Extract the following information from the message and respond with the extracted information in the following JSON format. 
-    IMPORTANT: 
-    - If any field is missing or not explicitly stated in the message, return it as an empty string ("").
-    - Look for variations of the fields. For example:
-      * Title might appear as: "title:", "título:", "name:", "nombre:"
-      * Description might appear as: "description:", "desc:", "descripción:", "about:"
-      * Token Symbol might appear as: "token:", "tokenSymbol:", "symbol:", "símbolo:"
-    - Extract only the value after the colon (:) for each field
-    - Remove any leading/trailing whitespace
-    - If a field appears multiple times, use the last occurrence
+    const username =
+      (message.content.metadata as MessageMetadata)?.author?.username || "";
+    const embeds = (message.content.metadata as MessageMetadata)?.embeds || [];
 
-    Here is the message:
-    ${message.content.text}
+    let messageToAnalyze = message.content.text;
+    let tokenAddress = "";
+    let parsedDetails: {
+      handle: string;
+      title: string;
+      description: string;
+      tokenSymbol: string;
+    };
 
-    Only respond with the extracted information in the following JSON format (without any other text):
-    {
-      "title": "string",
-      "description": "string",
-      "tokenSymbol": "string"
+    if (username === "clanker") {
+      if (embeds.length > 0) {
+        const embedUrl = embeds[0].url;
+        const match = embedUrl.match(/0x[a-fA-F0-9]{40}/);
+        if (match) {
+          tokenAddress = match[0];
+        }
+      }
+
+      const conversationHistory =
+        (message.content.conversationHistory as {
+          author: string;
+          text: string;
+        }[]) || [];
+      if (conversationHistory.length > 0) {
+        const context = `
+        Analyze this conversation and extract the following information. 
+        The conversation is in chronological order, and we need to find:
+        1. Title/Name for the token/project
+        2. Token Symbol (might start with $)
+        3. Description or purpose
+        
+        Rules:
+        - Look for requests or mentions of creating/deploying tokens
+        - Token symbols usually start with $ but might not
+        - The title might be mentioned without explicit "title:" or "name:"
+        - Look for context about what the token is about for the description
+        - If multiple mentions exist, use the most recent one
+        
+        Conversation:
+        ${conversationHistory
+          .map((msg) => `${msg.author}: ${msg.text}`)
+          .join("\n")}
+
+        
+        Current message:
+        ${messageToAnalyze}
+
+        Return only JSON format:
+        {
+          "title": "string",
+          "description": "string",
+          "tokenSymbol": "string"
+        }
+        `;
+
+        const conversationAnalysis = await generateText({
+          runtime: _runtime,
+          context: context,
+          modelClass: ModelClass.SMALL,
+          stop: ["\n"],
+        });
+
+        const parsedConversation = JSON.parse(conversationAnalysis);
+
+        const currentContext = `
+        Extract information from this message:
+        ${messageToAnalyze}
+        
+        Return JSON:
+        {
+          "title": "string",
+          "description": "string",
+          "tokenSymbol": "string"
+        }
+        `;
+
+        const currentAnalysis = await generateText({
+          runtime: _runtime,
+          context: currentContext,
+          modelClass: ModelClass.SMALL,
+          stop: ["\n"],
+        });
+
+        const parsedCurrent = JSON.parse(currentAnalysis);
+
+        parsedDetails = {
+          title: parsedCurrent.title || parsedConversation.title || "",
+          description:
+            parsedCurrent.description || parsedConversation.description || "",
+          tokenSymbol:
+            parsedCurrent.tokenSymbol || parsedConversation.tokenSymbol || "",
+          handle: username,
+        };
+      } else {
+        const currentContext = `
+        Extract information from this message:
+        ${messageToAnalyze}
+        
+        Return JSON:
+        {
+          "title": "string",
+          "description": "string",
+          "tokenSymbol": "string"
+        }
+        `;
+
+        const currentAnalysis = await generateText({
+          runtime: _runtime,
+          context: currentContext,
+          modelClass: ModelClass.SMALL,
+          stop: ["\n"],
+        });
+
+        parsedDetails = {
+          ...JSON.parse(currentAnalysis),
+          handle: username,
+        };
+      }
+    } else {
+      const context = `
+      Extract the following information from the message and respond with the extracted information in the following JSON format. 
+      IMPORTANT: 
+      - If any field is missing or not explicitly stated in the message, return it as an empty string ("").
+      - Look for variations of the fields. For example:
+        * Title might appear as: "title:", "título:", "name:", "nombre:"
+        * Description might appear as: "description:", "desc:", "descripción:", "about:"
+        * Token Symbol might appear as: "token:", "tokenSymbol:", "symbol:", "símbolo:", "ticker:", "$"
+      - For token symbols, if it starts with "$", include it without the "$"
+      - Extract only the value after the colon (:) for each field
+      - Remove any leading/trailing whitespace
+      - If a field appears multiple times, use the last occurrence
+
+      Here is the message:
+      ${messageToAnalyze}
+
+      Only respond with the extracted information in the following JSON format (without any other text):
+      {
+        "title": "string",
+        "description": "string",
+        "tokenSymbol": "string"
+      }
+      `;
+
+      const details = await generateText({
+        runtime: _runtime,
+        context: context,
+        modelClass: ModelClass.SMALL,
+        stop: ["\n"],
+      });
+
+      parsedDetails = {
+        ...JSON.parse(details),
+        handle: username,
+      };
     }
-    `;
 
-    const details = await generateText({
-      runtime: _runtime,
-      context: context,
-      modelClass: ModelClass.SMALL,
-      stop: ["\n"],
-    });
+    elizaLogger.log("Livestream details:", parsedDetails);
 
-    const parsedDetails = JSON.parse(details);
-    
-    // Agregar el handle automáticamente
-    parsedDetails.handle = username;
-
-    elizaLogger.log("Livestream details:", details, parsedDetails);
-
-    // Si el token es una dirección completa, extraer solo el símbolo
-    if (parsedDetails.tokenSymbol?.startsWith('0x')) {
-      parsedDetails.tokenSymbol = 'BILLI'; // Default token si es una dirección
+    if (parsedDetails.tokenSymbol?.startsWith("0x")) {
+      parsedDetails.tokenSymbol = "BILLI";
     }
 
     if (
-      !details ||
       !parsedDetails.title ||
       !parsedDetails.description ||
       !parsedDetails.tokenSymbol
@@ -155,7 +279,10 @@ export const livestreamGeneration: Action = {
         modelClass: ModelClass.SMALL,
         stop: ["\n"],
       });
-      return messageIncompleteDetails;
+      await callback({
+        text: messageIncompleteDetails,
+      });
+      return;
     }
 
     const response = await createLivestream({
@@ -165,9 +292,14 @@ export const livestreamGeneration: Action = {
     });
 
     if (response.message === "livestream created successfully") {
-      const livestreamLink = `${livestreamUrl}/token/${getRandomTokenAddress()}`;
+      const finalTokenAddress =
+        username === "clanker" && tokenAddress
+          ? tokenAddress
+          : getRandomTokenAddress();
+
+      const livestreamLink = `${livestreamUrl}/token/${finalTokenAddress}`;
       elizaLogger.log("Livestream link generated:", livestreamLink);
-      
+
       const responseWithLivestreamLink = await generateText({
         runtime: _runtime,
         context: `
@@ -188,13 +320,17 @@ export const livestreamGeneration: Action = {
         stop: ["\n"],
       });
 
-      console.log('=== RESPONSE WITH LIVESTREAM LINK ===', responseWithLivestreamLink);
+      console.log(
+        "=== RESPONSE WITH LIVESTREAM LINK ===",
+        responseWithLivestreamLink
+      );
       await callback({
         text: responseWithLivestreamLink,
       });
       return;
     }
   },
+
   examples: [
     [
       {

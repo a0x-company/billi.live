@@ -195,6 +195,8 @@ Estilo de interacción: {{interactionStyle}}
 
 # Instrucciones
 Decide si responder basado en:
+IMPORTANTE si el sender es "clanker" siempre se debe responder, si en su mensaje habla de
+esta creando o deployando, un token, si esta hablando de otra cosa proceder con las demas instrucciones para decidir
 1. ¿Es el mensaje apropiado y seguro para responder?
 2. ¿Requiere o merece una respuesta?
 3. ¿Es relevante para {{agentName}} y el contexto del canal?
@@ -266,7 +268,7 @@ export class NeynarClient extends EventEmitter {
     });
   }
 
-  private async handleMention(payload: WebhookPayload) {
+private async handleMention(payload: WebhookPayload) {
     try {
         elizaLogger.log('Manejando mención de Farcaster...');
         
@@ -521,7 +523,7 @@ private async handleReply(payload: WebhookPayload) {
       );
 
       if (alreadyResponded) {
-          elizaLogger.log('⚠️ Reply ya respondida, hash:', payload.data.hash);
+          elizaLogger.log('⚠️ Cast ya respondido, hash:', payload.data.hash);
           return;
       }
 
@@ -550,7 +552,7 @@ private async handleReply(payload: WebhookPayload) {
               conversation.conversation.cast,
               ...(conversation.conversation.cast.direct_replies || [])
           ].map(cast => ({
-              author: cast.author.display_name || cast.author.username,
+              author: cast.author.username || cast.author.display_name,
               text: cast.text,
               timestamp: cast.timestamp
           }));
@@ -574,7 +576,8 @@ private async handleReply(payload: WebhookPayload) {
                   author: payload.data.author,
                   conversationHistory,
                   channel: payload.data.channel,
-                  reactions: conversation?.conversation?.cast?.reactions
+                  reactions: conversation?.conversation?.cast?.reactions,
+                  embeds: payload.data.embeds
               }
           },
           createdAt: Date.now()
@@ -802,7 +805,8 @@ private async replyToCast(text: string, parentHash: string): Promise<any> {
             "cast.created": {
               "mentioned_fids": [this.config.fid],
               "parent_author_fids": [this.config.fid],
-              "exclude_author_fids": [this.config.fid]
+              "exclude_author_fids": [this.config.fid],
+              "author_fids": ["874542"]
             }
           }
         })
