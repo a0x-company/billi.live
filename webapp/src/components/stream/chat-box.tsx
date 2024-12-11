@@ -69,13 +69,7 @@ export const ChatBox: React.FC<{
       setOpenQrSigner(true);
       return;
     }
-
-    if (
-      !newMessage.trim() ||
-      !farcasterUser?.name ||
-      !farcasterUser?.pfpUrl ||
-      !farcasterUser?.handle
-    )
+    if (!newMessage.trim() || !farcasterUser?.pfpUrl || !farcasterUser?.handle)
       return;
 
     const message: Comment = {

@@ -1,8 +1,9 @@
-.env
+!node_modules/@ai16z
 !node_modules/@ai16z/eliza
+
 node_modules
+.env
 package-lock.json
 dist/src
-!node_modules/@ai16z
 dist
 db.sqlite

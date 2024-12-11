@@ -20,16 +20,17 @@ export const updateLivestreamStatus = (ctx: Context) => {
       status = "live";
     }
 
-    const updatedLivestream = await ctx.livestreamService.updateLivestreamStatus(stream.id, status);
+    await ctx.livestreamService.updateLivestreamStatus(stream.id, status);
 
-    if (updatedLivestream) {
-      if (updatedLivestream.pubHash) {
-        console.log("⚠️ Stream already published");
-        res.locals.warningMessage = "Livestream status updated, but has already been published";
-      } else {
-        await handleLiveStream(ctx, updatedLivestream, res);
-      }
-    }
+    /* NOT USED YET */
+    // if (updatedLivestream) {
+    //   if (updatedLivestream.pubHash) {
+    //     console.log("⚠️ Stream already published");
+    //     res.locals.warningMessage = "Livestream status updated, but has already been published";
+    //   } else {
+    //     await handleLiveStream(ctx, updatedLivestream, res);
+    //   }
+    // }
 
     return res.status(200).json({
       message: "Livestream status updated",

@@ -79,7 +79,7 @@ const TokenDetail = ({ address }: { address: string }) => {
 
   const { farcasterUser } = useContext(FarcasterUserContext);
 
-  const isStreamer = stream?.handle === farcasterUser?.name;
+  const isStreamer = stream?.handle === farcasterUser?.handle;
 
   const isStreamedByAgent = stream?.streamedByAgent || false;
 
@@ -237,7 +237,7 @@ const TokenDetail = ({ address }: { address: string }) => {
                     className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800/50 hover:bg-gray-800 transition-colors"
                   >
                     <Image
-                      src={"/assets/stream/billi-pfp.png"}
+                      src={stream.pfpUrl || "/assets/stream/billi-pfp.png"}
                       alt="avatar of the streamer"
                       width={24}
                       height={24}

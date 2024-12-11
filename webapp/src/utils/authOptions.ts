@@ -3,6 +3,11 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { createAppClient, viemConnector } from "@farcaster/auth-client";
 // import { adminAuth } from "@/firebase/firebase-admin";
 
+const domain =
+  process.env.NODE_ENV === "development"
+    ? "localhost:3000"
+    : "https://billi.live";
+
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
@@ -43,7 +48,7 @@ export const authOptions: AuthOptions = {
           const verifyResponse = await appClient.verifySignInMessage({
             message: credentials.message,
             signature: credentials.signature as `0x${string}`,
-            domain: "localhost:3000",
+            domain: domain,
             nonce: credentials.nonce,
           });
           const { success, fid } = verifyResponse;
