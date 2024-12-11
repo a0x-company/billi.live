@@ -36,6 +36,7 @@ import timeProvider from "./providers/timeProvider.ts";
 import evmPlugin from "./plugin-evm/src/index.ts";
 import { livestreamGeneration } from "./custom_actions/livestream.ts";
 import NeynarClientInterface from "./clients/neynar-client.ts";
+import { askToDeploy } from "./custom_actions/deployClanker.ts";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
