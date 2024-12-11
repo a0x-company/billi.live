@@ -334,7 +334,6 @@ export class NeynarClient extends EventEmitter {
 
         await this.runtime.messageManager.createMemory(memory);
 
-        // Primer estado para evaluación inicial
         const state = await this.runtime.composeState(memory, {
             platform: "farcaster",
             messageType: payload.data.parent_hash ? "reply" : "mention",
@@ -356,10 +355,8 @@ export class NeynarClient extends EventEmitter {
             actualUsername: agentProfile?.username || 'unknown'
         });
 
-        // Primera evaluación para actualizar la personalidad
         await this.runtime.evaluate(memory, state);
 
-        // Segundo estado para la respuesta
         const state2 = await this.runtime.composeState(memory, {
             platform: "farcaster",
             messageType: payload.data.parent_hash ? "reply" : "mention",
@@ -409,12 +406,18 @@ export class NeynarClient extends EventEmitter {
         });
 
         const callback = async (content: any) => {
-          console.log('=== CALLBACK CONTENT ===');
-          console.log('Content received:', JSON.stringify(content, null, 2));
+          console.log('=== CALLBACK CONTENT ===', {
+            text: content.text,
+            action: content.action
+          });
           
           const reply = await this.replyToCast(content.text, payload.data.hash);
           
-          console.log('Reply from Farcaster:', JSON.stringify(reply, null, 2));
+          console.log('Reply from Farcaster:', {
+            id: reply?.id,
+            text: reply?.content?.text,
+            roomId: reply?.roomId
+          });
           
           if (reply) {
               const memory = {
@@ -429,7 +432,12 @@ export class NeynarClient extends EventEmitter {
                   createdAt: Date.now()
               };
               
-              console.log('New Memory Created:', JSON.stringify(memory, null, 2));
+              console.log('New Memory Created:', {
+                id: memory.id,
+                text: memory.content.text,
+                action: memory.content.action,
+                roomId: memory.roomId
+              });
               await this.runtime.messageManager.createMemory(memory);
               return [memory];
           }
@@ -650,8 +658,11 @@ private async replyToCast(text: string, parentHash: string): Promise<any> {
       }
 
       const responseData = await response.json();
+      elizaLogger.log('Respuesta de Farcaster:', {
+          hash: responseData.cast.hash,
+          text: responseData.cast.text
+      });
       
-      // Crear y retornar un objeto de memoria para la respuesta
       const memory = {
           id: stringToUuid(responseData.cast.hash + "-" + this.runtime.agentId),
           userId: this.runtime.agentId,
@@ -669,6 +680,13 @@ private async replyToCast(text: string, parentHash: string): Promise<any> {
       };
 
       await this.runtime.messageManager.createMemory(memory);
+      elizaLogger.log('Memoria creada:', {
+          id: memory.id,
+          text: memory.content.text,
+          castHash: memory.content.metadata.castHash,
+          parentHash: memory.content.metadata.parentHash
+      });
+
       return memory;
 
   } catch (error) {
