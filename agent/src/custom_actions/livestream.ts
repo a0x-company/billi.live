@@ -139,7 +139,68 @@ export const livestreamGeneration: Action = {
     callback: HandlerCallback
   ) => {
     elizaLogger.log("Procesando solicitud de livestream...");
+    const text = message.content.text;
 
+    const intentContext = `
+      Analyze if this message is asking the AI assistant to create ITS OWN token.
+      
+      Message: "${text}"
+      
+      Examples of requests for AI's own token:
+      - "create your own token"
+      - "why don't you make your token"
+      - "get your own token"
+      - "create a token for yourself"
+      - "haz tu propio token"
+      - "create tu token"
+      
+      Response only with "true" or "false"
+    `;
+
+    const isAgentTokenRequest = await generateText({
+      runtime,
+      context: intentContext,
+      modelClass: ModelClass.SMALL,
+      stop: ["\n"],
+    });
+
+    if (isAgentTokenRequest.trim().toLowerCase() === "true") {
+      const generateTokenContext = `
+        You are ${runtime.character.name}.
+        
+        CREATE YOUR OWN TOKEN:
+        Based on your personality:
+        - Core traits: ${runtime.character.adjectives.join(", ")}
+        - Your essence: ${
+          Array.isArray(runtime.character.bio)
+            ? runtime.character.bio.join(" ")
+            : runtime.character.bio
+        }
+        
+        Create a message that:
+        1. Tags @clanker
+        2. Requests to create YOUR token with:
+           - A creative name that reflects your personality
+           - A unique 2-5 character symbol
+        
+        CRITICAL:
+        - MAXIMUM 320 CHARACTERS
+        - BE YOURSELF
+        - Must include both Name: and Symbol: in the message
+      `;
+
+      const tokenRequest = await generateText({
+        runtime,
+        context: generateTokenContext,
+        modelClass: ModelClass.SMALL,
+        stop: ["\n"],
+      });
+
+      await callback({
+        text: tokenRequest,
+      });
+      return;
+    }
     const embeds = (message.content.metadata as MessageMetadata)?.embeds || [];
     const conversationHistory =
       (message.content.metadata as MessageMetadata)?.conversationHistory || [];
