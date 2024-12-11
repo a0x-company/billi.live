@@ -133,6 +133,7 @@ export type Livestream = {
   description?: string;
   pubHash?: string;
   streamedByAgent?: boolean;
+  pfpUrl?: string;
 };
 
 export enum ActionType {
