@@ -23,7 +23,6 @@ import {
   validateCharacterConfig,
 } from "@ai16z/eliza";
 import { bootstrapPlugin } from "@ai16z/plugin-bootstrap";
-import { solanaPlugin } from "@ai16z/plugin-solana";
 import { nodePlugin } from "@ai16z/plugin-node";
 import Database from "better-sqlite3";
 import fs from "fs";
@@ -34,8 +33,8 @@ import { fileURLToPath } from "url";
 import { character } from "./character.ts";
 import type { DirectClient } from "@ai16z/client-direct";
 import timeProvider from "./providers/timeProvider.ts";
-import { factEvaluator} from "./evaluators/glass/evaluator.ts";
-import postToFarcasterAction from "./custom_actions/postFarcaster.ts";
+import evmPlugin from "./plugin-evm/src/index.ts";
+import { livestreamGeneration } from "./custom_actions/livestream.ts";
 import NeynarClientInterface from "./clients/neynar-client.ts";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
@@ -191,10 +190,10 @@ export async function initializeClients(
     clients.push(twitterClients);
   }
 
-  if (clientTypes.includes("farcaster")) {
-    const farcasterClient = await NeynarClientInterface.start(runtime);
-    if (farcasterClient) clients.push(farcasterClient);
-  }
+  // if (clientTypes.includes("farcaster")) {
+  //   const farcasterClient = await NeynarClientInterface.start(runtime);
+  //   if (farcasterClient) clients.push(farcasterClient);
+  // }
 
   if (character.plugins?.length > 0) {
     for (const plugin of character.plugins) {
@@ -207,6 +206,10 @@ export async function initializeClients(
   }
 
   return clients;
+}
+
+function getSecret(character: Character, secret: string) {
+  return character.settings.secrets?.[secret] || process.env[secret];
 }
 
 export function createAgent(
@@ -224,15 +227,19 @@ export function createAgent(
     databaseAdapter: db,
     token,
     modelProvider: character.modelProvider,
-    evaluators: [factEvaluator],
+    evaluators: [],
     character,
     plugins: [
       bootstrapPlugin,
       nodePlugin,
-      character.settings.secrets?.WALLET_PUBLIC_KEY ? solanaPlugin : null,
+      getSecret(character, "EVM_PRIVATE_KEY") ||
+      (getSecret(character, "WALLET_PUBLIC_KEY") &&
+        !getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))
+        ? evmPlugin
+        : null,
     ].filter(Boolean),
     providers: [timeProvider],
-    actions: [postToFarcasterAction],
+    actions: [livestreamGeneration],
     services: [],
     managers: [],
     cacheManager: cache,

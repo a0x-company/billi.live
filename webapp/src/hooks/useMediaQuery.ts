@@ -15,7 +15,10 @@ export function useMediaQuery(
   }: UseMediaQueryOptions = {}
 ): boolean {
   const getMatches = (query: string): boolean => {
-    return window.matchMedia(query).matches;
+    if (typeof window !== "undefined") {
+      return window.matchMedia(query).matches;
+    }
+    return defaultValue;
   };
 
   const [matches, setMatches] = useState<boolean>(() => {
@@ -25,18 +28,22 @@ export function useMediaQuery(
     return defaultValue;
   });
 
-  // Handles the change event of the media query.
+  // Maneja el evento de cambio de la consulta de medios.
   function handleChange() {
     setMatches(getMatches(query));
   }
 
   useIsomorphicLayoutEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     const matchMedia = window.matchMedia(query);
 
-    // Triggered at the first client-side load and if query changes
+    // Se dispara en la primera carga del lado del cliente y si la consulta cambia
     handleChange();
 
-    // Use deprecated `addListener` and `removeListener` to support Safari < 14 (#135)
+    // Usa `addListener` y `removeListener` deprecados para soportar Safari < 14 (#135)
     if (matchMedia.addListener) {
       matchMedia.addListener(handleChange);
     } else {

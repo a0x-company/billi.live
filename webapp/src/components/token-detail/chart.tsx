@@ -8,7 +8,7 @@ interface ChartProps {
 
 const Chart: React.FC<ChartProps> = ({ tokenAddress }) => {
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const size = isMobile ? `h-[467px] w-[320px]` : `h-[480px] w-[895px]`;
+  const size = isMobile ? `h-[467px] w-[360px]` : `h-[580px] w-[895px]`;
   return (
     <iframe
       className={size}

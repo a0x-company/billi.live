@@ -8,12 +8,14 @@ export interface FarcasterUser {
   signer_approval_url?: string;
   fid?: number;
   pfpUrl?: string;
+  handle?: string;
+  displayName?: string;
   name?: string;
 }
 
 interface FarcasterUserContextProps {
-  farcasterUser: FarcasterUser;
-  setFarcasterUser: (user: FarcasterUser) => void;
+  farcasterUser: FarcasterUser | null;
+  setFarcasterUser: (user: FarcasterUser | null) => void;
   isConnected: boolean;
   setIsConnected: (connected: boolean) => void;
 }
@@ -37,7 +39,7 @@ export const FarcasterUserProvider = ({
 }: {
   children: ReactNode;
 }) => {
-  const [farcasterUser, setFarcasterUser] = useState<FarcasterUser>(
+  const [farcasterUser, setFarcasterUser] = useState<FarcasterUser | null>(
     defaultContext.farcasterUser
   );
   const [isConnected, setIsConnected] = useState<boolean>(
@@ -47,10 +49,8 @@ export const FarcasterUserProvider = ({
 
   useEffect(() => {
     const storedData = localStorage.getItem(LOCAL_STORAGE_KEYS.FARCASTER_USER);
-    console.log("storedData", storedData);
     if (storedData) {
       const user: FarcasterUser = JSON.parse(storedData);
-      console.log("Usuario desde localStorage:", user);
       setFarcasterUser((prevUser) => ({ ...prevUser, ...user }));
       setIsConnected(true);
     }
@@ -61,12 +61,10 @@ export const FarcasterUserProvider = ({
       setFarcasterUser((prevUser) => ({
         ...prevUser,
         pfpUrl: session.user?.image || undefined,
-        name: session.user?.name || undefined,
+        handle: session.user?.name || undefined,
       }));
     }
   }, [session, setFarcasterUser]);
-
-  console.log("farcasterUser", farcasterUser);
 
   return (
     <FarcasterUserContext.Provider
