@@ -100,8 +100,10 @@ Eres {{agentName}} respondiendo a una mención en Farcaster de {{senderName}}.
 Mantén las respuestas concisas (máx 320 caracteres) y conserva tu personalidad.
 Incluye una acción si es apropiado. {{actionNames}}
 
-Acciones disponibles:
+# Acciones disponibles:
 {{actions}}
+# Action Examples
+{{actionExamples}}
 ` + messageCompletionFooter;
 
 const farcasterShouldRespondTemplate =
@@ -169,8 +171,10 @@ Eres {{agentName}} respondiendo a una respuesta en Farcaster de {{senderName}}.
 Mantén las respuestas concisas (máx 320 caracteres) y conserva tu personalidad.
 Incluye una acción si es apropiado. {{actionNames}}
 
-Acciones disponibles:
+# Acciones disponibles:
 {{actions}}
+# Action Examples
+{{actionExamples}}
 ` + messageCompletionFooter;
 
 const farcasterShouldRespondToReplyTemplate =
@@ -227,6 +231,7 @@ export class NeynarClient extends EventEmitter {
   private config: NeynarConfig;
   private webhookId: string | null = null;
   private webhookSecret: string | null = null;
+  private hasRespondedMention: Map<string, boolean> = new Map();
 
   constructor(runtime: any, config: NeynarConfig, port: number = 3001) {
     super();
@@ -284,6 +289,34 @@ export class NeynarClient extends EventEmitter {
     try {
       elizaLogger.log("Manejando mención de Farcaster...");
 
+      // Verificar menciones duplicadas
+      const roomId = stringToUuid(`farcaster-${payload.data.hash}`);
+      const mentionMemories = await this.runtime.messageManager.getMemories({
+        roomId: roomId,
+        agentId: this.runtime.agentId,
+      });
+
+      elizaLogger.log("🔍 Verificando menciones en roomId:", roomId);
+      elizaLogger.log(
+        "📝 Memorias existentes:",
+        JSON.stringify(
+          mentionMemories.map((m) => m.content),
+          null,
+          2
+        )
+      );
+
+      const alreadyResponded = mentionMemories.some(
+        (memory) =>
+          Array.isArray(memory.content?.responded_mentions) &&
+          memory.content.responded_mentions.includes(payload.data.hash)
+      );
+
+      if (alreadyResponded) {
+        elizaLogger.log("⚠️ Mención ya respondida, hash:", payload.data.hash);
+        return;
+      }
+
       const wasAgentMentioned = payload.data.mentioned_profiles.some(
         (profile) => profile.fid === this.config.fid
       );
@@ -325,7 +358,6 @@ export class NeynarClient extends EventEmitter {
         }
       }
 
-      const roomId = stringToUuid(`farcaster-${payload.data.hash}`);
       const userId = stringToUuid(payload.data.author.username);
 
       const memory = {
@@ -336,6 +368,7 @@ export class NeynarClient extends EventEmitter {
         content: {
           text: payload.data.text,
           source: "farcaster",
+          responded_mentions: [payload.data.hash],
           metadata: {
             castHash: payload.data.hash,
             threadHash: payload.data.thread_hash,
@@ -351,9 +384,12 @@ export class NeynarClient extends EventEmitter {
         createdAt: Date.now(),
       };
 
+      elizaLogger.debug(
+        "💾 Guardando memoria inicial:",
+        JSON.stringify(memory.content, null, 2)
+      );
       await this.runtime.messageManager.createMemory(memory);
 
-      // Primer estado para evaluación inicial
       const state = await this.runtime.composeState(memory, {
         platform: "farcaster",
         messageType: payload.data.parent_hash ? "reply" : "mention",
@@ -381,10 +417,8 @@ export class NeynarClient extends EventEmitter {
         actualUsername: agentProfile?.username || "unknown",
       });
 
-      // Primera evaluación para actualizar la personalidad
       await this.runtime.evaluate(memory, state);
 
-      // Segundo estado para la respuesta
       const state2 = await this.runtime.composeState(memory, {
         platform: "farcaster",
         messageType: payload.data.parent_hash ? "reply" : "mention",
@@ -436,7 +470,7 @@ export class NeynarClient extends EventEmitter {
           this.runtime.character.templates?.farcasterMessageHandlerTemplate ||
           farcasterMessageTemplate,
       });
-
+      console.log("=== CONTEXT ===", context);
       const response = await generateMessageResponse({
         runtime: this.runtime,
         context,
@@ -444,13 +478,19 @@ export class NeynarClient extends EventEmitter {
       });
 
       const callback = async (content: any) => {
-        console.log("=== CALLBACK CONTENT ===");
-        console.log("Content received:", JSON.stringify(content, null, 2));
+        console.log("=== CALLBACK CONTENT ===", {
+          text: content.text,
+          action: content.action,
+        });
 
         const reply = await this.replyToCast(content.text, payload.data.hash);
 
-        console.log("Reply from Farcaster:", JSON.stringify(reply, null, 2));
-
+        console.log("Reply from Farcaster:", {
+          id: reply?.id,
+          text: reply?.content?.text,
+          roomId: reply?.roomId,
+        });
+        this.hasRespondedMention.set(payload.data.hash, true);
         if (reply) {
           const memory = {
             id: reply.id,
@@ -464,7 +504,12 @@ export class NeynarClient extends EventEmitter {
             createdAt: Date.now(),
           };
 
-          console.log("New Memory Created:", JSON.stringify(memory, null, 2));
+          console.log("New Memory Created:", {
+            id: memory.id,
+            text: memory.content.text,
+            action: memory.content.action,
+            roomId: memory.roomId,
+          });
           await this.runtime.messageManager.createMemory(memory);
           return [memory];
         }
@@ -484,20 +529,15 @@ export class NeynarClient extends EventEmitter {
           createdAt: Date.now(),
         };
 
-        const actionResult: any = await this.runtime.processActions(
+        await this.runtime.processActions(
           memory,
           [responseMemory],
           state2,
           callback
         );
 
-        if (
-          !actionResult ||
-          !responseMemory.content?.action
-            ?.toLowerCase()
-            .includes("generatelivestream")
-        ) {
-          const responseMemories = await callback(response);
+        if (!this.hasRespondedMention.has(payload.data.hash)) {
+          await callback(response);
           elizaLogger.success("Respuesta publicada exitosamente");
         }
       }
@@ -511,33 +551,65 @@ export class NeynarClient extends EventEmitter {
     try {
       elizaLogger.log("Manejando respuesta a un cast del agente...");
 
-      const conversationResponse = await fetch(
-        `https://api.neynar.com/v2/farcaster/cast/conversation?identifier=${payload.data.thread_hash}&type=hash&reply_depth=3&include_chronological_parent_casts=true`,
-        {
-          headers: {
-            accept: "application/json",
-            "x-api-key": this.config.apiKey,
-          },
-        }
+      // Verificar replies duplicadas usando el hash del mensaje específico
+      const roomId = stringToUuid(`farcaster-${payload.data.hash}`);
+      const replyMemories = await this.runtime.messageManager.getMemories({
+        roomId: roomId,
+        agentId: this.runtime.agentId,
+      });
+
+      elizaLogger.log("🔍 Verificando reply en roomId:", roomId);
+      elizaLogger.log(
+        "📝 Memorias existentes:",
+        JSON.stringify(
+          replyMemories.map((m) => m.content),
+          null,
+          2
+        )
       );
 
-      if (!conversationResponse.ok) {
-        throw new Error("Error obteniendo la conversación");
+      const alreadyResponded = replyMemories.some(
+        (memory) =>
+          Array.isArray(memory.content?.responded_mentions) &&
+          memory.content.responded_mentions.includes(payload.data.hash)
+      );
+
+      if (alreadyResponded) {
+        elizaLogger.log("⚠️ Reply ya respondida, hash:", payload.data.hash);
+        return;
       }
 
-      const conversation = await conversationResponse.json();
+      // Obtener contexto de la conversación usando thread_hash
+      let conversationHistory = [];
+      let conversation = null;
 
-      const conversationHistory = [
-        ...(conversation.conversation.chronological_parent_casts || []),
-        conversation.conversation.cast,
-        ...(conversation.conversation.cast.direct_replies || []),
-      ].map((cast) => ({
-        author: cast.author.display_name || cast.author.username,
-        text: cast.text,
-        timestamp: cast.timestamp,
-      }));
+      if (payload.data.thread_hash) {
+        const conversationResponse = await fetch(
+          `https://api.neynar.com/v2/farcaster/cast/conversation?identifier=${payload.data.thread_hash}&type=hash&reply_depth=3&include_chronological_parent_casts=true`,
+          {
+            headers: {
+              accept: "application/json",
+              "x-api-key": this.config.apiKey,
+            },
+          }
+        );
 
-      const roomId = stringToUuid(`farcaster-${payload.data.thread_hash}`);
+        if (!conversationResponse.ok) {
+          throw new Error("Error obteniendo la conversación");
+        }
+
+        conversation = await conversationResponse.json();
+        conversationHistory = [
+          ...(conversation.conversation.chronological_parent_casts || []),
+          conversation.conversation.cast,
+          ...(conversation.conversation.cast.direct_replies || []),
+        ].map((cast) => ({
+          author: cast.author.display_name || cast.author.username,
+          text: cast.text,
+          timestamp: cast.timestamp,
+        }));
+      }
+
       const userId = stringToUuid(payload.data.author.username);
 
       const memory = {
@@ -548,6 +620,7 @@ export class NeynarClient extends EventEmitter {
         content: {
           text: payload.data.text,
           source: "farcaster",
+          responded_mentions: [payload.data.hash],
           metadata: {
             castHash: payload.data.hash,
             threadHash: payload.data.thread_hash,
@@ -555,7 +628,7 @@ export class NeynarClient extends EventEmitter {
             author: payload.data.author,
             conversationHistory,
             channel: payload.data.channel,
-            reactions: conversation.conversation.cast.reactions,
+            reactions: conversation?.conversation?.cast?.reactions,
           },
         },
         createdAt: Date.now(),
@@ -563,7 +636,6 @@ export class NeynarClient extends EventEmitter {
 
       await this.runtime.messageManager.createMemory(memory);
 
-      // Primer estado para evaluación inicial
       const state = await this.runtime.composeState(memory, {
         platform: "farcaster",
         messageType: "reply",
@@ -587,17 +659,16 @@ export class NeynarClient extends EventEmitter {
         interactionStyle:
           "conversacional y manteniendo respuestas bajo 320 caracteres",
         engagement:
-          conversation.conversation.cast.reactions.likes_count > 5
+          conversation?.conversation?.cast?.reactions?.likes_count > 5
             ? "tema de alto interés"
             : "conversación normal",
-        likesCount: conversation.conversation.cast.reactions.likes_count || 0,
+        likesCount:
+          conversation?.conversation?.cast?.reactions?.likes_count || 0,
         actualUsername: payload.data.author.username,
       });
 
-      // Primera evaluación para actualizar la personalidad
       await this.runtime.evaluate(memory, state);
 
-      // Segundo estado para la respuesta
       const state2 = await this.runtime.composeState(memory, {
         platform: "farcaster",
         messageType: "reply",
@@ -621,10 +692,11 @@ export class NeynarClient extends EventEmitter {
         interactionStyle:
           "conversacional y manteniendo respuestas bajo 320 caracteres",
         engagement:
-          conversation.conversation.cast.reactions.likes_count > 5
+          conversation?.conversation?.cast?.reactions?.likes_count > 5
             ? "tema de alto interés"
             : "conversación normal",
-        likesCount: conversation.conversation.cast.reactions.likes_count || 0,
+        likesCount:
+          conversation?.conversation?.cast?.reactions?.likes_count || 0,
         actualUsername: payload.data.author.username,
       });
 
@@ -656,22 +728,67 @@ export class NeynarClient extends EventEmitter {
       });
 
       const callback = async (content: any) => {
+        console.log("=== CALLBACK CONTENT ===", {
+          text: content.text,
+          action: content.action,
+        });
+
         const reply = await this.replyToCast(content.text, payload.data.hash);
-        return reply ? [reply] : [];
+
+        console.log("Reply from Farcaster:", {
+          id: reply?.id,
+          text: reply?.content?.text,
+          roomId: reply?.roomId,
+        });
+        this.hasRespondedMention.set(payload.data.hash, true);
+        if (reply) {
+          const memory = {
+            id: reply.id,
+            userId: this.runtime.agentId,
+            agentId: this.runtime.agentId,
+            roomId: reply.roomId,
+            content: {
+              text: content.text,
+              action: content.action,
+            },
+            createdAt: Date.now(),
+          };
+
+          console.log("New Memory Created:", {
+            id: memory.id,
+            text: memory.content.text,
+            action: memory.content.action,
+            roomId: memory.roomId,
+          });
+          await this.runtime.messageManager.createMemory(memory);
+          return [memory];
+        }
+        return [];
       };
 
       if (response?.text) {
-        const responseMemories = await callback(response);
-        elizaLogger.success("Respuesta publicada exitosamente");
+        const responseMemory: Memory = {
+          id: stringToUuid(response.text),
+          userId: this.runtime.agentId,
+          agentId: this.runtime.agentId,
+          roomId: memory.roomId,
+          content: {
+            text: response.text,
+            action: response?.action,
+          },
+          createdAt: Date.now(),
+        };
 
-        // Procesar acciones después de enviar la respuesta
-        if (responseMemories.length > 0) {
-          await this.runtime.processActions(
-            memory,
-            responseMemories,
-            state2,
-            callback
-          );
+        await this.runtime.processActions(
+          memory,
+          [responseMemory],
+          state2,
+          callback
+        );
+
+        if (!this.hasRespondedMention.has(payload.data.hash)) {
+          await callback(response);
+          elizaLogger.success("Respuesta publicada exitosamente");
         }
       }
     } catch (error) {
@@ -702,8 +819,11 @@ export class NeynarClient extends EventEmitter {
       }
 
       const responseData = await response.json();
+      elizaLogger.log("Respuesta de Farcaster:", {
+        hash: responseData.cast.hash,
+        text: responseData.cast.text,
+      });
 
-      // Crear y retornar un objeto de memoria para la respuesta
       const memory = {
         id: stringToUuid(responseData.cast.hash + "-" + this.runtime.agentId),
         userId: this.runtime.agentId,
@@ -721,6 +841,13 @@ export class NeynarClient extends EventEmitter {
       };
 
       await this.runtime.messageManager.createMemory(memory);
+      elizaLogger.log("Memoria creada:", {
+        id: memory.id,
+        text: memory.content.text,
+        castHash: memory.content.metadata.castHash,
+        parentHash: memory.content.metadata.parentHash,
+      });
+
       return memory;
     } catch (error) {
       elizaLogger.error("Error publicando respuesta en Farcaster:", error);
