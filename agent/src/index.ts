@@ -190,10 +190,10 @@ export async function initializeClients(
     clients.push(twitterClients);
   }
 
-  // if (clientTypes.includes("farcaster")) {
-  //   const farcasterClient = await NeynarClientInterface.start(runtime);
-  //   if (farcasterClient) clients.push(farcasterClient);
-  // }
+  if (clientTypes.includes("farcaster")) {
+    const farcasterClient = await NeynarClientInterface.start(runtime);
+    if (farcasterClient) clients.push(farcasterClient);
+  }
 
   if (character.plugins?.length > 0) {
     for (const plugin of character.plugins) {
@@ -230,7 +230,7 @@ export function createAgent(
     evaluators: [],
     character,
     plugins: [
-      bootstrapPlugin,
+      // bootstrapPlugin,
       nodePlugin,
       getSecret(character, "EVM_PRIVATE_KEY") ||
       (getSecret(character, "WALLET_PUBLIC_KEY") &&

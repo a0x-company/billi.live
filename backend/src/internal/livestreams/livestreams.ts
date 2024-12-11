@@ -24,7 +24,8 @@ interface LivestreamManager {
     handle: string,
     title: string,
     description: string,
-    livepeerInfo: StreamInfo
+    livepeerInfo: StreamInfo,
+    tokenAddress: string
   ): Promise<void>;
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
@@ -85,7 +86,8 @@ export class LivestreamService {
   public async createLivestream(
     handle: string,
     title: string,
-    description: string
+    description: string,
+    tokenAddress: string
   ): Promise<Livestream> {
     const livepeerResponse = await this.livepeerService.createLivestream(title, true);
 
@@ -97,7 +99,13 @@ export class LivestreamService {
       srtIngestUrl: `srt://rtmp.livepeer.com:2935?streamid=${livepeerResponse.streamKey}`,
     };
 
-    await this.livestreamStorage.saveLivestream(handle, title, description, streamInfo);
+    await this.livestreamStorage.saveLivestream(
+      handle,
+      title,
+      description,
+      streamInfo,
+      tokenAddress
+    );
 
     const livestream: Livestream = {
       title: title,
