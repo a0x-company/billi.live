@@ -231,7 +231,7 @@ export function createAgent(
     evaluators: [],
     character,
     plugins: [
-      bootstrapPlugin,
+      // bootstrapPlugin,
       nodePlugin,
       getSecret(character, "EVM_PRIVATE_KEY") ||
       (getSecret(character, "WALLET_PUBLIC_KEY") &&

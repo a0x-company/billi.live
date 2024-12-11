@@ -28,12 +28,10 @@ export class ProfileStorage {
   }
 
   public async getSignerUuid(handle: string): Promise<string | null> {
-    console.log("handle", handle, "collection", this.PROFILES_COLLECTION);
     try {
-      console.log("this.db", this.db);
       const snapshot = await this.db
-        .collection("farcaster-users")
-        .where("handle", "==", "matiasp")
+        .collection(this.PROFILES_COLLECTION)
+        .where("handle", "==", handle)
         .limit(1)
         .get();
 

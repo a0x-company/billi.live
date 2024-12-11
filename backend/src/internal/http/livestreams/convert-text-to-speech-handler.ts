@@ -1,19 +1,23 @@
 import { RequestHandler } from "express";
+
 import { getIO } from "@internal/livestreams/socket";
+
 import { Context } from "./routes";
 
 export const convertTextToSpeechHandler = (ctx: Context): RequestHandler => {
   return async (req, res) => {
     try {
       const { text, streamId } = req.body;
-      const audioBuffer = await ctx.livestreamService.convertTextToSpeech(text);
 
-      // Emitir el audio como base64 y el texto
+      const agentResponseText = await ctx.livestreamService.talkToAgent(text);
+
+      const audioBuffer = await ctx.livestreamService.convertTextToSpeech(agentResponseText);
+
       const audioBase64 = audioBuffer.toString("base64");
       const io = getIO();
       io.to(streamId).emit("new-audio", {
         audio: audioBase64,
-        text: text, // Agregamos el texto al evento
+        text: agentResponseText,
       });
 
       res.json({ success: true, data: audioBase64 });

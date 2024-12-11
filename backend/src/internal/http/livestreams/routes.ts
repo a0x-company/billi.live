@@ -18,13 +18,21 @@ export type Context = {
 };
 
 interface LivestreamManager {
-  createLivestream(handle: string, title: string, description: string): Promise<Livestream>;
+  createLivestream(
+    handle: string,
+    title: string,
+    description: string,
+    tokenAddress: string,
+    pubHash: string,
+    pfpUrl?: string
+  ): Promise<Livestream>;
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
   getLivesForLanding(): Promise<Livestream[]>;
   getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
   convertTextToSpeech(text: string): Promise<any>;
   publishLivestream(livestream: Livestream): Promise<string | void>;
+  talkToAgent(message: string): Promise<string>;
 }
 
 export function livestreamsRoutes(router: Express, ctx: Context) {

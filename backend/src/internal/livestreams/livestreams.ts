@@ -17,13 +17,17 @@ import {
 
 // internal
 import { connectedUsers } from "./sharedState";
+import { AgentService } from "@internal/agents";
 
 interface LivestreamManager {
   saveLivestream(
     handle: string,
     title: string,
     description: string,
-    livepeerInfo: StreamInfo
+    livepeerInfo: StreamInfo,
+    tokenAddress: string,
+    pubHash: string,
+    pfpUrl?: string
   ): Promise<void>;
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
@@ -51,6 +55,10 @@ interface FarcasterManager {
   ): Promise<string | void>;
 }
 
+interface AgentManager {
+  talkToAgent(message: string): Promise<string>;
+}
+
 export class LivestreamService {
   private livestreamStorage: LivestreamManager;
 
@@ -62,6 +70,8 @@ export class LivestreamService {
 
   private farcasterSvc: FarcasterManager;
 
+  private agentService: AgentManager;
+
   constructor(
     firestore: Firestore,
     profileManager: ProfileManager,
@@ -72,12 +82,16 @@ export class LivestreamService {
     this.playHtService = new PlayHtService();
     this.profileManager = profileManager;
     this.farcasterSvc = farcasterSvc;
+    this.agentService = new AgentService();
   }
 
   public async createLivestream(
     handle: string,
     title: string,
-    description: string
+    description: string,
+    tokenAddress: string,
+    pubHash: string,
+    pfpUrl?: string
   ): Promise<Livestream> {
     const livepeerResponse = await this.livepeerService.createLivestream(title, true);
 
@@ -89,7 +103,15 @@ export class LivestreamService {
       srtIngestUrl: `srt://rtmp.livepeer.com:2935?streamid=${livepeerResponse.streamKey}`,
     };
 
-    await this.livestreamStorage.saveLivestream(handle, title, description, streamInfo);
+    await this.livestreamStorage.saveLivestream(
+      handle,
+      title,
+      description,
+      streamInfo,
+      tokenAddress,
+      pubHash,
+      pfpUrl
+    );
 
     const livestream: Livestream = {
       title: title,
@@ -135,6 +157,7 @@ export class LivestreamService {
     return await this.playHtService.convertTextToSpeech(text);
   }
 
+  /* NOT USED YET */
   public async publishLivestream(livestream: Livestream): Promise<string | void> {
     console.log("PUBLISHING LIVESTREAM");
     if (!livestream.handle) {
@@ -173,5 +196,9 @@ export class LivestreamService {
     );
 
     return identifier;
+  }
+
+  public async talkToAgent(message: string): Promise<string> {
+    return await this.agentService.talkToAgent(message);
   }
 }

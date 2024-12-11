@@ -4,14 +4,16 @@ import * as fs from "fs";
 import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
 
+import { PLAYHT_API_KEY, PLAYHT_USER_ID } from "@internal/config";
+
 export class PlayHtService {
   private readonly tempDir = path.join(process.cwd(), "temp");
 
   constructor() {
     // Inicializar PlayHT con las credenciales
     PlayHT.init({
-      userId: "KeQqKrHv2JcpUQgHLLNptqfD9Tu1",
-      apiKey: "196a520af9784b7d820aba4835909716",
+      userId: PLAYHT_USER_ID!,
+      apiKey: PLAYHT_API_KEY!,
     });
 
     // Crear directorio temporal si no existe

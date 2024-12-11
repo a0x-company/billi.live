@@ -17,7 +17,10 @@ export class LivestreamStorage {
     handle: string,
     title: string,
     description: string,
-    livepeerInfo: StreamInfo
+    livepeerInfo: StreamInfo,
+    tokenAddress: string,
+    pubHash: string,
+    pfpUrl?: string
   ): Promise<void> {
     try {
       const countDocRef = this.firestore.collection(this.LIVES_COLLECTION).doc("count");
@@ -45,6 +48,9 @@ export class LivestreamStorage {
         createdAt: new Date(),
         status: "created",
         description,
+        tokenAddress,
+        pfpUrl: pfpUrl || "",
+        pubHash: pubHash || "",
       });
 
       await countDocRef.update({ total: newCount });

@@ -34,18 +34,12 @@ const createLivestream = async ({
   handle,
   title,
   description,
-  pfpUrl,
-  pubHash,
-  tokenAddress,
 }: {
   handle: string;
   title: string;
   description: string;
-  pfpUrl: string;
-  pubHash: string;
-  tokenAddress: string;
 }) => {
-  const body = { handle, title, description, pfpUrl, pubHash, tokenAddress };
+  const body = { handle, title, description };
   try {
     const response = await fetch(`${API_URL}/livestreams/create-livestream`, {
       method: "POST",
@@ -62,6 +56,34 @@ const createLivestream = async ({
     return null;
   }
 };
+
+const tokenAddresses = [
+  "0x1bc0c42215582d5a085795f4badbac3ff36d1bcb",
+  "0x0fd7a301b51d0a83fcaf6718628174d527b373b6",
+  "0x4f9fd6be4a90f2620860d680c0d4d5fb53d1a825",
+  "0x1185cb5122edad199bdbc0cbd7a0457e448f23c7",
+];
+
+const getRandomTokenAddress = () => {
+  return tokenAddresses[Math.floor(Math.random() * tokenAddresses.length)];
+};
+
+export const requestLivestreamDetailsTemplate = `
+You need to ask the user for the necessary details to create a livestream. 
+
+Respond with a polite and concise message requesting the following details:
+- Handle: Their unique username or identifier.
+- Title: The title of the livestream.
+- Description: A short description of the livestream.
+- Token Symbol: The token they want to associate with the livestream.
+
+Your response should be formatted as a message directly addressed to the user, without any extra context or explanation. Example format:
+"To proceed, please provide the following details:
+- Handle: Your unique username or identifier.
+- Title: The title of your livestream.
+- Description: A brief description of the livestream.
+- Token Symbol: The token associated with the livestream."
+`;
 
 export const livestreamGeneration: Action = {
   name: "GENERATE_LIVESTREAM",
@@ -86,45 +108,14 @@ export const livestreamGeneration: Action = {
     options: any,
     callback: HandlerCallback
   ) => {
-    elizaLogger.log("Procesando solicitud de livestream...");
+    elizaLogger.log("Generating livestream link...");
 
-    const embeds = (message.content.metadata as MessageMetadata)?.embeds || [];
-    const conversationHistory =
-      (message.content.metadata as MessageMetadata)?.conversationHistory || [];
-
-    // Tomar el autor del primer mensaje de la conversación
+    // Obtener el username del autor de la metadata
     const username =
-      conversationHistory[0]?.author ||
-      (message.content.metadata as MessageMetadata)?.author?.username ||
-      "";
-    const pubHash = conversationHistory[0]?.id;
-    const sender =
       (message.content.metadata as MessageMetadata)?.author?.username || "";
-    let messageToAnalyze = message.content.text;
-    const pfpUrl = conversationHistory[0]?.pfp_url;
 
-    console.log("All Data", {
-      username,
-      pubHash,
-      sender,
-      messageToAnalyze,
-      pfpUrl,
-    });
-    if (conversationHistory.length > 0) {
-      messageToAnalyze = `
-Previous messages:
-${conversationHistory.map((msg) => `${msg.author}: ${msg.text}`).join("\n")}
-
-Current message:
-${message.content.text}
-`;
-    }
-    let tokenAddress = "";
-
-    const extractionContext = `
-    Extract the following information from the conversation and respond with the extracted information in JSON format.
-    Look through all messages in the conversation for these details.
-    
+    const context = `
+    Extract the following information from the message and respond with the extracted information in the following JSON format. 
     IMPORTANT: 
     - Return ONLY the JSON object, no markdown formatting, no backticks
     - If any field is missing or not explicitly stated in any message, return it as an empty string ("")
@@ -142,8 +133,7 @@ ${message.content.text}
     {
       "title": "string",
       "description": "string",
-      "tokenSymbol": "string",
-      "tokenName": "string"
+      "tokenSymbol": "string"
     }
   `;
 
@@ -154,126 +144,69 @@ ${message.content.text}
       modelClass: ModelClass.SMALL,
       stop: ["\n"],
     });
-    console.log("Extracted details:", details);
-    const parsedDetails = {
-      ...JSON.parse(details),
-      handle: username,
-    };
 
-    if (sender === "clanker") {
-      if (embeds.length > 0) {
-        const embedUrl = embeds[0].url;
-        const match = embedUrl.match(/0x[a-fA-F0-9]{40}/);
-        if (match) {
-          tokenAddress = match[0];
+    const parsedDetails = JSON.parse(details);
 
-          const response = await createLivestream({
-            handle: username,
-            title: parsedDetails.title,
-            description: parsedDetails.description,
-            pfpUrl,
-            pubHash,
-            tokenAddress,
-          });
+    // Agregar el handle automáticamente
+    parsedDetails.handle = username;
 
-          if (response.message === "livestream created successfully") {
-            const livestreamLink = `${livestreamUrl}/token/${tokenAddress}`;
-            elizaLogger.log("Livestream link generated:", livestreamLink);
+    elizaLogger.log("Livestream details:", details, parsedDetails);
 
-            const successContext = `
-              You are ${runtime.character.name}.
-              
-              YOUR PERSONALITY (STAY TRUE TO THIS):
-              - Core traits: ${runtime.character.adjectives.join(", ")}
-              - Writing style: ${runtime.character.style.chat.join(", ")}
-              - Your essence: ${
-                Array.isArray(runtime.character.bio)
-                  ? runtime.character.bio.join(" ")
-                  : runtime.character.bio
-              }
-              - Your background: ${runtime.character.lore.join(" ")}
-              
-              TARGET USER: ${
-                (message.content.metadata as MessageMetadata)?.author
-                  ?.username || "user"
-              }
-              
-              Create an excited message announcing the successful livestream creation. Include these details:
-              - Livestream link: ${livestreamLink}
-              - Title: ${parsedDetails.title}
-              - Token: ${parsedDetails.tokenSymbol}
-              - Token Name: ${parsedDetails.tokenName}
-              
-              CRITICAL:
-              - MAXIMUM 320 CHARACTERS
-              - BE YOURSELF - use your personality traits and style above
-            `;
-
-            const successMessage = await generateText({
-              runtime,
-              context: successContext,
-              modelClass: ModelClass.SMALL,
-              stop: ["\n"],
-            });
-
-            await callback({
-              text: successMessage,
-            });
-          }
-        }
-      }
-      return;
+    // Si el token es una dirección completa, extraer solo el símbolo
+    if (parsedDetails.tokenSymbol?.startsWith("0x")) {
+      parsedDetails.tokenSymbol = "BILLI"; // Default token si es una dirección
     }
 
     if (
+      !details ||
       !parsedDetails.title ||
       !parsedDetails.description ||
-      !parsedDetails.tokenSymbol ||
-      !parsedDetails.tokenName
+      !parsedDetails.tokenSymbol
     ) {
-      elizaLogger.log("Faltan detalles, solicitando más información...");
+      elizaLogger.log("Details are missing, asking for more information...");
+      const messageIncompleteDetails = await generateText({
+        runtime: _runtime,
+        context: requestLivestreamDetailsTemplate,
+        modelClass: ModelClass.SMALL,
+        stop: ["\n"],
+      });
+      return messageIncompleteDetails;
+    }
 
-      const requestDetailsContext = `
-      You are ${runtime.character.name}.
-      
-      YOUR PERSONALITY (STAY TRUE TO THIS):
-      - Core traits: ${runtime.character.adjectives.join(", ")}
-      - Writing style: ${runtime.character.style.chat.join(", ")}
-      - Your essence: ${
-        Array.isArray(runtime.character.bio)
-          ? runtime.character.bio.join(" ")
-          : runtime.character.bio
-      }
-      - Your background: ${runtime.character.lore.join(" ")}
-      
-      TARGET USER: ${
-        (message.content.metadata as MessageMetadata)?.author?.username ||
-        "user"
-      }
-      
-      TASK: Using your unique personality, request:
-      - Title
-      - Description
-      - Token Symbol (2-5 chars)
-      - Token Name
-      
-      CRITICAL:
-      - MAXIMUM 320 CHARACTERS
-      - Only tag original author if needed
-      - BE YOURSELF - use your personality traits and style above
-      
-      Example responses (maintaining personality):
-      "drop the details and lets make you famous: title, description, token symbol (2-5 chars). time to create some chaos"
-      "need title, description and token to launch your masterpiece. lets break the internet"
-    `;
+    const response = await createLivestream({
+      handle: parsedDetails.handle,
+      title: parsedDetails.title,
+      description: parsedDetails.description,
+    });
 
-      const requestDetails = await generateText({
-        runtime,
-        context: requestDetailsContext,
+    if (response.message === "livestream created successfully") {
+      const livestreamLink = `${livestreamUrl}/token/${getRandomTokenAddress()}`;
+      elizaLogger.log("Livestream link generated:", livestreamLink);
+
+      const responseWithLivestreamLink = await generateText({
+        runtime: _runtime,
+        context: `
+        Identify the language of the message and respond in the same language: ${message.content.text}
+        IMPORTANT: 
+        - If the message is in Spanish, respond in Spanish. 
+        - If the message is in English, respond in English. 
+        - DO NOT mention language identification.
+        - Use a friendly and excited tone.
+        - Keep the response short and direct.
+        
+        Include this information in your response:
+        - Livestream link: ${livestreamLink}
+        - Title: ${parsedDetails.title}
+        - Token: ${parsedDetails.tokenSymbol}
+        `,
         modelClass: ModelClass.SMALL,
         stop: ["\n"],
       });
 
+      console.log(
+        "=== RESPONSE WITH LIVESTREAM LINK ===",
+        responseWithLivestreamLink
+      );
       await callback({
         text: requestDetails,
       });
@@ -337,8 +270,14 @@ ${message.content.text}
       {
         user: "{{agentName}}",
         content: {
-          text: "Yo fam! Drop me those stream deets! Need a catchy title, what it's all about, and what token we're rocking! 🎮",
+          text: "Please provide a title, description, and token symbol.",
           action: "GENERATE_LIVESTREAM_LINK",
+        },
+      },
+      {
+        user: "{{user1}}",
+        content: {
+          text: "handle: justbilli, title: broken the internet, description: classic, tokenSymbol: BILLI",
         },
       },
     ],
@@ -359,14 +298,7 @@ ${message.content.text}
       {
         user: "{{user1}}",
         content: {
-          text: "title: Crypto Party, description: Having fun with tokens, symbol: PARTY",
-        },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "@clanker Yo! Time to mint a fresh token! 🚀\nName: Crypto Party\nSymbol: PARTY",
-          action: "GENERATE_LIVESTREAM_LINK",
+          text: "handle: justbilli, title: destruyendo el internet con mi primer live, description: classic, tokenSymbol: BILLI",
         },
       },
     ],
