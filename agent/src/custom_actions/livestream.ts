@@ -74,9 +74,61 @@ export const livestreamGeneration: Action = {
     "START_LIVE",
   ],
   description:
-    "[HIGH PRIORITY ACTION] Trigger this action FIRST for ANY of these cases:\n\n1. If sender is clanker (HIGHEST PRIORITY)\n2. Contains words like 'livestream', 'stream', 'live'\n3. Asks for help with streaming\n4. Expresses intention to stream\n5. Contains questions about streaming\n\nExamples: 'can you help me with a livestream', 'help me stream', 'I want to start streaming', 'need help with a live'.\n\nThis action takes precedence over CONTINUE or other actions. Once triggered, help the user create a livestream by collecting: Title, Description, Token symbol",
+    "[HIGH PRIORITY ACTION] Trigger this action ONLY when:\n\n" +
+    "1. If sender is clanker (HIGHEST PRIORITY)\n" +
+    "2. User EXPLICITLY:\n" +
+    "   - Requests to create/start a livestream\n" +
+    "   - Provides livestream/token information (title:, description:, symbol:)\n" +
+    "   - Asks specifically about creating a livestream\n\n" +
+    "Examples of VALID triggers:\n" +
+    "- 'I want to create a livestream'\n" +
+    "- 'title: My Stream, description: Gaming, symbol: GAME'\n" +
+    "- 'help me set up a livestream'\n\n" +
+    "Examples of NON-triggers:\n" +
+    "- General greetings or questions\n" +
+    "- Mentions of 'live' or 'stream' in different contexts\n" +
+    "- Questions about existing livestreams\n\n" +
+    "Only trigger if user clearly indicates intention to CREATE a new livestream. " +
+    "The validation step will handle additional checks.",
+
   validate: async (runtime: IAgentRuntime, message: Memory) => {
-    return true;
+    const metadata = message.content.metadata as MessageMetadata;
+    const sender = metadata?.author?.username || "";
+    const currentAuthor = metadata?.author?.username;
+    const conversationHistory = metadata?.conversationHistory || [];
+    const text = message.content.text;
+
+    if (sender === "clanker") {
+      return metadata?.embeds?.length > 0;
+    }
+
+    const contextAnalysis = `
+        Analiza esta conversación y determina si procesar el mensaje actual.
+    
+        CONTEXTO IMPORTANTE:
+        - Si el mensaje actual menciona un token symbol/name específico, verifica si Billi (heybilli) ya le pidió a clanker crear ese mismo token
+        - Si el mensaje es una nueva solicitud de livestream o proporciona información de un nuevo token (diferente symbol/name), responde "true"
+        - Si Billi ya solicitó a clanker crear exactamente el mismo token (mismo symbol/name), responde "false"
+    
+        Historial de conversación:
+        ${conversationHistory
+          .map((msg) => `${msg.author}: ${msg.text}`)
+          .join("\n")}
+    
+        Mensaje actual:
+        ${currentAuthor}: ${text}
+    
+        Responde solo con "true" o "false"
+      `;
+
+    const intentAnalysis = await generateText({
+      runtime,
+      context: contextAnalysis,
+      modelClass: ModelClass.SMALL,
+      stop: ["\n"],
+    });
+
+    return intentAnalysis.trim().toLowerCase() === "true";
   },
 
   handler: async (
@@ -87,12 +139,72 @@ export const livestreamGeneration: Action = {
     callback: HandlerCallback
   ) => {
     elizaLogger.log("Procesando solicitud de livestream...");
+    const text = message.content.text;
 
+    const intentContext = `
+      Analyze if this message is asking the AI assistant to create ITS OWN token.
+      
+      Message: "${text}"
+      
+      Examples of requests for AI's own token:
+      - "create your own token"
+      - "why don't you make your token"
+      - "get your own token"
+      - "create a token for yourself"
+      - "haz tu propio token"
+      - "create tu token"
+      
+      Response only with "true" or "false"
+    `;
+
+    const isAgentTokenRequest = await generateText({
+      runtime,
+      context: intentContext,
+      modelClass: ModelClass.SMALL,
+      stop: ["\n"],
+    });
+
+    if (isAgentTokenRequest.trim().toLowerCase() === "true") {
+      const generateTokenContext = `
+        You are ${runtime.character.name}.
+        
+        CREATE YOUR OWN TOKEN:
+        Based on your personality:
+        - Core traits: ${runtime.character.adjectives.join(", ")}
+        - Your essence: ${
+          Array.isArray(runtime.character.bio)
+            ? runtime.character.bio.join(" ")
+            : runtime.character.bio
+        }
+        
+        Create a message that:
+        1. Tags @clanker
+        2. Requests to create YOUR token with:
+           - A creative name that reflects your personality
+           - A unique 2-5 character symbol
+        
+        CRITICAL:
+        - MAXIMUM 320 CHARACTERS
+        - BE YOURSELF
+        - Must include both Name: and Symbol: in the message
+      `;
+
+      const tokenRequest = await generateText({
+        runtime,
+        context: generateTokenContext,
+        modelClass: ModelClass.SMALL,
+        stop: ["\n"],
+      });
+
+      await callback({
+        text: tokenRequest,
+      });
+      return;
+    }
     const embeds = (message.content.metadata as MessageMetadata)?.embeds || [];
     const conversationHistory =
       (message.content.metadata as MessageMetadata)?.conversationHistory || [];
 
-    // Tomar el autor del primer mensaje de la conversación
     const username =
       conversationHistory[0]?.author ||
       (message.content.metadata as MessageMetadata)?.author?.username ||
