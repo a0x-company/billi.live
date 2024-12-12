@@ -23,7 +23,6 @@ import {
   validateCharacterConfig,
 } from "@ai16z/eliza";
 import { bootstrapPlugin } from "@ai16z/plugin-bootstrap";
-import { nodePlugin } from "@ai16z/plugin-node";
 import Database from "better-sqlite3";
 import fs from "fs";
 import readline from "readline";
@@ -37,6 +36,7 @@ import evmPlugin from "./plugin-evm/src/index.ts";
 import { livestreamGeneration } from "./custom_actions/livestream.ts";
 import NeynarClientInterface from "./clients/neynar-client.ts";
 import { askToDeploy } from "./custom_actions/deployClanker.ts";
+import { createNodePlugin } from "@ai16z/plugin-node";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -232,7 +232,7 @@ export function createAgent(
     character,
     plugins: [
       // bootstrapPlugin,
-      nodePlugin,
+      createNodePlugin(),
       getSecret(character, "EVM_PRIVATE_KEY") ||
       (getSecret(character, "WALLET_PUBLIC_KEY") &&
         !getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))

@@ -9,6 +9,7 @@ import { PlayHtService } from "./play-ht";
 // types
 import {
   ActionType,
+  CastInFarcaster,
   CreateLivestreamLivepeerResponse,
   Livestream,
   PostAdditionalData,
@@ -27,7 +28,8 @@ interface LivestreamManager {
     livepeerInfo: StreamInfo,
     tokenAddress: string,
     pubHash: string,
-    pfpUrl?: string
+    pfpUrl?: string,
+    castInFarcaster?: CastInFarcaster
   ): Promise<void>;
   updateLivestreamStatus(streamId: string, status: string): Promise<Livestream | null>;
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
@@ -53,6 +55,7 @@ interface FarcasterManager {
     postId: string,
     additionalData: PostAdditionalData
   ): Promise<string | void>;
+  getCastInFarcasterByPubHash(pubHash: string): Promise<CastInFarcaster>;
 }
 
 interface AgentManager {
@@ -103,6 +106,13 @@ export class LivestreamService {
       srtIngestUrl: `srt://rtmp.livepeer.com:2935?streamid=${livepeerResponse.streamKey}`,
     };
 
+    let castInFarcaster;
+    try {
+      castInFarcaster = await this.farcasterSvc.getCastInFarcasterByPubHash(pubHash);
+    } catch (error) {
+      console.error("Error getting cast in farcaster by pub hash", error);
+    }
+
     await this.livestreamStorage.saveLivestream(
       handle,
       title,
@@ -110,7 +120,8 @@ export class LivestreamService {
       streamInfo,
       tokenAddress,
       pubHash,
-      pfpUrl
+      pfpUrl,
+      castInFarcaster
     );
 
     const livestream: Livestream = {

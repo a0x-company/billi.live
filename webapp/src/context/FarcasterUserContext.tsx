@@ -47,13 +47,17 @@ export const FarcasterUserProvider = ({
   const { data: session } = useSession();
 
   useEffect(() => {
-    const storedData = localStorage.getItem(LOCAL_STORAGE_KEYS.FARCASTER_USER);
-    if (storedData) {
-      const user: FarcasterUser = JSON.parse(storedData);
-      setFarcasterUser((prevUser) => ({ ...prevUser, ...user }));
-      setIsConnected(true);
+    if (!isConnected) {
+      const storedData = localStorage.getItem(
+        LOCAL_STORAGE_KEYS.FARCASTER_USER
+      );
+      if (storedData) {
+        const user: FarcasterUser = JSON.parse(storedData);
+        setFarcasterUser((prevUser) => ({ ...prevUser, ...user }));
+        setIsConnected(true);
+      }
     }
-  }, [setFarcasterUser, setIsConnected]);
+  }, [setFarcasterUser, isConnected]);
 
   useEffect(() => {
     if (session?.user && !farcasterUser?.fid) {

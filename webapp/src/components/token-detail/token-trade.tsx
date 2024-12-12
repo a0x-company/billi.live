@@ -2,7 +2,7 @@
 import React, { useRef } from "react";
 
 const widgetURL =
-  "https://app.uniswap.org/#/swap?exactField=input&outputCurrency=";
+  "https://app.uniswap.org/swap?exactField=input&outputCurrency=";
 
 export const TokenTrade: React.FC<{
   tokenAddress: string;

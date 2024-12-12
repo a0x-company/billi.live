@@ -1,22 +1,35 @@
 "use client";
 
+// react
+import { useCallback, useContext } from "react";
+
 // axios
 import axios from "axios";
 
-// wagmi
+// next
+import Image from "next/image";
+import Link from "next/link";
 
-// config
+// context
 import {
   FarcasterUser,
   FarcasterUserContext,
   LOCAL_STORAGE_KEYS,
 } from "@/context/FarcasterUserContext";
-import { SignInButton, StatusAPIResponse } from "@farcaster/auth-kit";
-import { signIn, signOut } from "next-auth/react";
-import { useCallback, useContext, useEffect, useState } from "react";
-import "./sign-in.css";
-import Image from "next/image";
+
+// icons
 import { LogOut, Tv, User2 } from "lucide-react";
+
+// farcaster
+import { SignInButton, StatusAPIResponse } from "@farcaster/auth-kit";
+
+// auth
+import { signIn, signOut } from "next-auth/react";
+
+// css
+import "./sign-in.css";
+
+// components
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +38,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import Link from "next/link";
 
 const styleLink =
   "cursor-pointer bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-md transition-all duration-300 flex items-center justify-center";

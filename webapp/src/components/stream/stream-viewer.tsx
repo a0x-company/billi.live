@@ -8,6 +8,7 @@ import PlayerForHls from "../livepeer/player-hls";
 const StreamViewer = ({ stream }: { stream: Livestream }) => {
   const [isStreaming, setIsStreaming] = useState(true);
   const [isLoadingStream, setIsLoadingStream] = useState(false);
+  /* CHANGE SCREEN THEN USER IS STREAMING (status:live) BY OBS */
   return (
     <PlayerForHls
       src={stream.livepeerInfo.playbackUrl}

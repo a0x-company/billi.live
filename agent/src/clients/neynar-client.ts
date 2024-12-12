@@ -10,7 +10,6 @@ import {
   generateShouldRespond,
   AgentRuntime,
   Memory,
-  Action,
 } from "@ai16z/eliza";
 import { composeContext } from "@ai16z/eliza";
 import dotenv from "dotenv";
@@ -331,7 +330,6 @@ export class NeynarClient extends EventEmitter {
       const roomId = stringToUuid(`farcaster-${payload.data.hash}`);
       const mentionMemories = await this.runtime.messageManager.getMemories({
         roomId: roomId,
-        agentId: this.runtime.agentId,
       });
 
       elizaLogger.log("🔍 Verificando menciones en roomId:", roomId);
@@ -590,7 +588,6 @@ export class NeynarClient extends EventEmitter {
       const roomId = stringToUuid(`farcaster-${payload.data.hash}`);
       const replyMemories = await this.runtime.messageManager.getMemories({
         roomId: roomId,
-        agentId: this.runtime.agentId,
       });
 
       elizaLogger.log("🔍 Verificando reply en roomId:", roomId);
