@@ -182,6 +182,8 @@ export class LivestreamStorage {
           createdAt: data.createdAt,
           status: data.status,
           streamedByAgent: data.streamedByAgent,
+          cast: data.cast,
+          pfpUrl: data.pfpUrl,
         };
       }
 
