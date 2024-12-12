@@ -58,11 +58,8 @@
 }
 ._1n3pr302 {
   border: none;
-  border-color: #d2d2d2;
-  border-style: solid;
-  border-width: 1px solid;
   box-sizing: border-box;
-  font-size: 18px;
+  font-size: 16px;
   margin: 0;
   vertical-align: baseline;
   -webkit-font-smoothing: antialiased;
@@ -73,14 +70,14 @@
   background: none;
   cursor: pointer;
   text-align: left;
-  padding: 13px 21px;
+  padding: 8px 8px;
   border-radius: 8px;
   font-weight: 600;
   display: flex;
   align-items: center;
   font-family: Inter, sans-serif;
   transition: opacity 0.2s;
-  background-color: #00000008;
+  background-color: transparent;
   color: #000;
 }
 ._1n3pr302:disabled {

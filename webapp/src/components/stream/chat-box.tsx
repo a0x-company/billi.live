@@ -3,6 +3,11 @@
 // react
 import React, { useContext, useEffect, useRef, useState } from "react";
 
+// next
+import Image from "next/image";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+
 // icons
 import { Heart, Repeat, Send } from "lucide-react";
 
@@ -27,61 +32,6 @@ import { Comment, Cast } from "@/types";
 
 // socket
 import { Socket } from "socket.io-client";
-import { useParams } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-
-const mockComments: Comment[] = [
-  {
-    id: "1",
-    handle: "albert",
-    pfp: "",
-    comment: "Hello, how are you?",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: "2",
-    handle: "albert",
-    pfp: "",
-    comment: "Hello, how are you?",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: "3",
-    handle: "albert",
-    pfp: "",
-    comment: "Hello, how are you?",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: "4",
-    handle: "albert",
-    pfp: "",
-    comment: "Hello, how are you?",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: "5",
-    handle: "albert",
-    pfp: "",
-    comment: "Hello, how are you?",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: "6",
-    handle: "albert",
-    pfp: "",
-    comment: "Hello, how are you?",
-    timestamp: new Date().toISOString(),
-  },
-  {
-    id: "7",
-    handle: "albert",
-    pfp: "",
-    comment: "Hello, how are you?",
-    timestamp: new Date().toISOString(),
-  },
-];
 
 // TODO: change this to version with websocket
 export const ChatBox: React.FC<{

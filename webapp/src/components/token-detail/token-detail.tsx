@@ -19,7 +19,7 @@ import { FarcasterUserContext } from "@/context/FarcasterUserContext";
 // components
 import { LoadingSpinner } from "../spinner";
 import { ChatBox } from "../stream/chat-box";
-import StreamHost from "../stream/stream-host";
+import StreamHost, { StreamHostProps } from "../stream/stream-host";
 import StreamViewer from "../stream/stream-viewer";
 import Chart from "./chart";
 import { TokenTrade } from "./token-trade";
@@ -105,6 +105,11 @@ const TokenDetail = ({ address }: { address: string }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [currentText, setCurrentText] = useState<string>("");
 
+  const [streamHost, setStreamHost] = useState<StreamHostProps>({
+    status: "idle",
+    streamType: null,
+  });
+
   const {
     data: stream,
     error,
@@ -120,8 +125,6 @@ const TokenDetail = ({ address }: { address: string }) => {
 
   const { farcasterUser } = useContext(FarcasterUserContext);
 
-  console.log("stream", stream);
-
   const isStreamer = useMemo(
     () => stream?.handle === farcasterUser?.handle,
     [stream?.handle, farcasterUser?.handle]
@@ -133,6 +136,7 @@ const TokenDetail = ({ address }: { address: string }) => {
   );
 
   useEffect(() => {
+    if (isConnectedRoom.current) return;
     console.log("Joining stream with streamId: ", address);
 
     socketRef.current = io(socketUrl, {
@@ -208,7 +212,7 @@ const TokenDetail = ({ address }: { address: string }) => {
     }
 
     return () => {
-      if (socketRef.current) {
+      if (socketRef.current && isConnectedRoom.current) {
         socketRef.current.emit("leaveStream", address);
         socketRef.current.off("userCount");
         socketRef.current.off("comment");
@@ -273,9 +277,6 @@ const TokenDetail = ({ address }: { address: string }) => {
             </>
           )}
 
-          {/* TODO: Add stream component */}
-          {/* While farcaster user is requested live rendering <StreamHost /> */}
-          {/* Otherwise, render <StreamPreview /> */}
           {stream && (
             <>
               <div className="space-y-4">
@@ -315,7 +316,7 @@ const TokenDetail = ({ address }: { address: string }) => {
                 </div>
               </div>
 
-              <div className="aspect-video bg-black rounded-lg overflow-hidden">
+              <div className="aspect-video bg-black rounded-lg overflow-hidden mt-auto">
                 {isStreamedByAgent ? (
                   <AgentViewer
                     handle={stream.handle as string}
@@ -323,8 +324,14 @@ const TokenDetail = ({ address }: { address: string }) => {
                     isMuted={isMuted}
                     setIsMuted={setIsMuted}
                   />
-                ) : isStreamer ? (
-                  <StreamHost stream={stream} />
+                ) : isStreamer &&
+                  streamHost.streamType !== "browser" &&
+                  stream.status === "live" ? (
+                  <StreamHost
+                    streamHost={streamHost}
+                    setStreamHost={setStreamHost}
+                    stream={stream}
+                  />
                 ) : (
                   <StreamViewer stream={stream} />
                 )}

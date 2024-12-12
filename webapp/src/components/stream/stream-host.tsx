@@ -16,21 +16,26 @@ export interface StreamHostProps {
   streamType: TypeStream;
 }
 
-const StreamHost = ({ stream }: { stream: Livestream }) => {
+const StreamHost = ({
+  streamHost,
+  setStreamHost,
+  stream,
+}: {
+  streamHost: StreamHostProps;
+  setStreamHost: (streamHost: StreamHostProps) => void;
+  stream: Livestream;
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [streamHost, setStreamHost] = useState<StreamHostProps>({
-    status: "idle",
-    streamType: null,
-  });
+
   const handleSelectStreamType = (
     type: TypeStream | null,
     status?: StatusStream
   ) => {
-    setStreamHost((prev) => ({
-      ...prev,
-      status: status ?? prev.status,
+    setStreamHost({
+      ...streamHost,
+      status: status ?? streamHost.status,
       streamType: type,
-    }));
+    });
   };
   return (
     <div className="w-full h-full flex flex-col items-center justify-center relative">
