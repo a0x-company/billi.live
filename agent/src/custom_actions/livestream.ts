@@ -343,7 +343,14 @@ ${message.content.text}
       !parsedDetails.tokenSymbol ||
       !parsedDetails.tokenName
     ) {
-      elizaLogger.log("Faltan detalles, solicitando más información...");
+      elizaLogger.log("Faltan detalles, solicitando información específica...");
+
+      const missingFields = [];
+      if (!parsedDetails.title) missingFields.push("título");
+      if (!parsedDetails.description) missingFields.push("descripción");
+      if (!parsedDetails.tokenSymbol)
+        missingFields.push("símbolo del token (2-5 caracteres)");
+      if (!parsedDetails.tokenName) missingFields.push("nombre del token");
 
       const requestDetailsContext = `
       You are ${runtime.character.name}.
@@ -356,27 +363,26 @@ ${message.content.text}
           ? runtime.character.bio.join(" ")
           : runtime.character.bio
       }
-      - Your background: ${runtime.character.lore.join(" ")}
       
       TARGET USER: ${
         (message.content.metadata as MessageMetadata)?.author?.username ||
         "user"
       }
       
-      TASK: Using your unique personality, request:
-      - Title
-      - Description
-      - Token Symbol (2-5 chars)
-      - Token Name
+      TASK: Using your unique personality, request ONLY these missing details:
+      ${missingFields.join(", ")}
       
       CRITICAL:
       - MAXIMUM 320 CHARACTERS
-      - Only tag original author if needed
+      - Only ask for the missing fields listed above
       - BE YOURSELF - use your personality traits and style above
+      - Make it clear these are the only missing pieces needed
       
-      Example responses (maintaining personality):
-      "drop the details and lets make you famous: title, description, token symbol (2-5 chars). time to create some chaos"
-      "need title, description and token to launch your masterpiece. lets break the internet"
+      Example if only title is missing:
+      "just need a catchy title and we're ready to roll! what's it gonna be?"
+      
+      Example if title and symbol are missing:
+      "almost there! drop me a title and token symbol (2-5 chars) and we'll make magic happen!"
     `;
 
       const requestDetails = await generateText({
