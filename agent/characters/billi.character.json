@@ -1,6 +1,6 @@
 {
   "name": "Billi",
-  "clients": ["direct", "farcaster", "discord"],
+  "clients": ["direct", "farcaster"],
   "modelProvider": "openai",
   "settings": {
     "secrets": {

@@ -81,9 +81,10 @@ export const ChatBox: React.FC<{
       timestamp: new Date().toISOString(),
     };
     console.log("message", message);
+    const normalizedAddress = address.toString().toLowerCase();
     if (socketRef.current) {
       socketRef.current.emit("newComment", {
-        streamId: address,
+        streamId: normalizedAddress,
         isAgent: isStreamedByAgent,
         ...message,
       });

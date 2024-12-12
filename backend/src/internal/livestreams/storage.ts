@@ -52,7 +52,7 @@ export class LivestreamStorage {
         tokenAddress,
         pfpUrl: pfpUrl || "",
         pubHash: pubHash || "",
-        castInFarcaster: castInFarcaster || null,
+        cast: castInFarcaster || null,
       });
 
       await countDocRef.update({ total: newCount });

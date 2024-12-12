@@ -1,7 +1,7 @@
 "use client";
 
 // react
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 
 // next
 import Link from "next/link";
@@ -79,9 +79,17 @@ const TokenDetail = ({ address }: { address: string }) => {
 
   const { farcasterUser } = useContext(FarcasterUserContext);
 
-  const isStreamer = stream?.handle === farcasterUser?.handle;
+  console.log("stream", stream);
 
-  const isStreamedByAgent = stream?.streamedByAgent || false;
+  const isStreamer = useMemo(
+    () => stream?.handle === farcasterUser?.handle,
+    [stream?.handle, farcasterUser?.handle]
+  );
+
+  const isStreamedByAgent = useMemo(
+    () => stream?.streamedByAgent || false,
+    [stream?.streamedByAgent]
+  );
 
   useEffect(() => {
     console.log("Joining stream with streamId: ", address);
@@ -91,7 +99,7 @@ const TokenDetail = ({ address }: { address: string }) => {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      timeout: 20000,
+      timeout: 30000,
       secure: true,
     });
 
@@ -102,7 +110,7 @@ const TokenDetail = ({ address }: { address: string }) => {
 
           socketRef.current.emit("joinStream", {
             streamId: address,
-            handle: "handle",
+            handle: farcasterUser?.handle,
           });
           isConnectedRoom.current = true;
         }
@@ -147,10 +155,19 @@ const TokenDetail = ({ address }: { address: string }) => {
           });
         });
       }
+
+      // Manejo de errores de conexión
+      socketRef.current.on("connect_error", (error) => {
+        console.error("Error de conexión WebSocket:", error);
+      });
+
+      socketRef.current.on("connect_timeout", (timeout) => {
+        console.error("Tiempo de conexión WebSocket agotado:", timeout);
+      });
     }
 
     return () => {
-      if (socketRef.current && isConnectedRoom) {
+      if (socketRef.current) {
         socketRef.current.emit("leaveStream", address);
         socketRef.current.off("userCount");
         socketRef.current.off("comment");
