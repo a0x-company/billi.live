@@ -4,7 +4,7 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 
 // icons
-import { Send } from "lucide-react";
+import { Heart, Repeat, Send } from "lucide-react";
 
 // utils
 import { format } from "date-fns";
@@ -23,13 +23,65 @@ import { QRCode } from "@farcaster/auth-kit";
 import axios from "axios";
 
 // types
-import { Comment } from "@/types";
+import { Comment, Cast } from "@/types";
 
 // socket
 import { Socket } from "socket.io-client";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+
+const mockComments: Comment[] = [
+  {
+    id: "1",
+    handle: "albert",
+    pfp: "",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "2",
+    handle: "albert",
+    pfp: "",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "3",
+    handle: "albert",
+    pfp: "",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "4",
+    handle: "albert",
+    pfp: "",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "5",
+    handle: "albert",
+    pfp: "",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "6",
+    handle: "albert",
+    pfp: "",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "7",
+    handle: "albert",
+    pfp: "",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+];
 
 // TODO: change this to version with websocket
 export const ChatBox: React.FC<{
@@ -38,12 +90,14 @@ export const ChatBox: React.FC<{
   isConnectedRoom: React.MutableRefObject<boolean>;
   socketRef: React.MutableRefObject<Socket | null>;
   isStreamedByAgent: boolean;
+  cast?: Cast;
 }> = ({
   comments,
   isConnectedRoom,
   setComments,
   socketRef,
   isStreamedByAgent,
+  cast,
 }) => {
   const farcasterContext = useContext(FarcasterUserContext);
   const { farcasterUser, setFarcasterUser, isConnected, setIsConnected } =
@@ -212,7 +266,7 @@ export const ChatBox: React.FC<{
       </div>
 
       {!isConnected && newMessage.trim().length > 1 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center h-full bg-black/50 backdrop-blur-sm gap-4">
+        <div className="absolute inset-0 flex flex-col items-center justify-center h-full bg-black/50 backdrop-blur-sm gap-4 z-50 rounded-lg">
           <h1 className="text-white">You are not connected to Farcaster 🔌</h1>
         </div>
       )}
@@ -226,9 +280,48 @@ export const ChatBox: React.FC<{
         </div>
       )}
 
+      {/* SHOW CAST ABSOLUTE FLOATING */}
+      {cast && (
+        <Link
+          href={`https://warpcast.com/${cast.author.username}/${cast.pubHash}`}
+          target="_blank"
+          className="flex flex-col items-start justify-center h-min bg-black/50 backdrop-blur-sm rounded-xl p-4 mx-4 mt-4 mb-4 cursor-pointer hover:bg-black/70 transition-colors duration-300 line-clamp-1"
+        >
+          <div className="flex items-start gap-2">
+            <Image
+              src={cast.author.pfp_url}
+              alt={cast.author.username}
+              width={48}
+              height={48}
+              className="rounded-full"
+            />
+            <div className="flex items-center gap-2 leading-none pt-2">
+              <p className="text-white font-bold">{cast.author.username}</p>
+              <p className="text-gray-400">
+                {format(new Date(cast.timestamp), "HH:mm")}
+              </p>
+            </div>
+          </div>
+          <p className="text-white pt-2">{cast.text}</p>
+          <div className="flex items-center gap-2">
+            <p className="flex items-center gap-1">
+              <Heart className="w-4 h-4" />
+              {cast.reactions.likes_count}
+            </p>
+            <p className="flex items-center gap-1">
+              <Repeat className="w-4 h-4" />
+              {cast.reactions.recasts_count}
+            </p>
+          </div>
+        </Link>
+      )}
+
       <ul
         ref={commentsContainerRef}
         className="flex-1 p-4 space-y-4 overflow-y-scroll scrollbar-hidden relative"
+        style={{
+          maskImage: `linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 10px), transparent)`,
+        }}
       >
         {comments.map((msg) => (
           <li key={msg.id} className="flex flex-col">
@@ -239,7 +332,7 @@ export const ChatBox: React.FC<{
                 className="flex items-center gap-2"
               >
                 <Image
-                  src={msg.pfp}
+                  src={msg.pfp || "/assets/stream/billi-pfp.png"}
                   alt={msg.handle}
                   width={24}
                   height={24}

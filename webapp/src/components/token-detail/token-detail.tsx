@@ -54,6 +54,47 @@ const getLiveStremingByTokenAddress = async (
   }
 };
 
+// const stream = {
+//   handle: "heybilli",
+//   tokenAddress: "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+//   title: "Talking with fans",
+//   livepeerInfo: {
+//     embeaddableBroadcastUrl: "https://lvpr.tv/broadcast/b7df-70rg-x6d1-ag4j",
+//     srtIngestUrl: "srt://rtmp.livepeer.com:2935?streamid=b7df-70rg-x6d1-ag4j",
+//     playbackUrl: "https://livepeercdn.studio/hls/b7dfnuax4kzrf9uo/index.m3u8",
+//     streamKey: "b7df-70rg-x6d1-ag4j",
+//     streamId: "b7df7430-ceb6-41bb-87fb-e4f3455a4ed1",
+//   },
+//   createdAt: {
+//     _seconds: 1733764602,
+//     _nanoseconds: 819000000,
+//   },
+//   description: "Talk with frens",
+//   status: "live",
+//   streamedByAgent: true,
+//   pfpUrl:
+//     "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/c25730b6-e1db-45ff-e874-f72d5dc05a00/rectcrop3",
+//   cast: {
+//     pubHash: "0x984d5117df404f47bd5a72cb5852921aeddb4fad",
+//     author: {
+//       username: "heybilli",
+//       display_name: "Billi",
+//       pfp_url:
+//         "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/c25730b6-e1db-45ff-e874-f72d5dc05a00/rectcrop3",
+//     },
+//     text: "GM mfers",
+//     timestamp: "2024-12-11T21:54:52.000Z",
+//     reactions: {
+//       likes_count: 4,
+//       recasts_count: 0,
+//     },
+//     replies: {
+//       count: 7,
+//     },
+//   },
+//   userCount: 1,
+// };
+
 const TokenDetail = ({ address }: { address: string }) => {
   const socketRef = useRef<Socket | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -176,7 +217,7 @@ const TokenDetail = ({ address }: { address: string }) => {
         socketRef.current.disconnect();
       }
     };
-  }, [address, stream?.handle, isStreamedByAgent, isConnectedRoom]);
+  }, [address, isStreamedByAgent, isConnectedRoom, farcasterUser]);
 
   // if (!hasInteracted) {
   //   return (
@@ -254,7 +295,7 @@ const TokenDetail = ({ address }: { address: string }) => {
                     className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-800/50 hover:bg-gray-800 transition-colors"
                   >
                     <Image
-                      src={stream.pfpUrl || "/assets/stream/billi-pfp.png"}
+                      src={stream?.pfpUrl || "/assets/stream/billi-pfp.png"}
                       alt="avatar of the streamer"
                       width={24}
                       height={24}
@@ -304,6 +345,7 @@ const TokenDetail = ({ address }: { address: string }) => {
           isConnectedRoom={isConnectedRoom}
           socketRef={socketRef}
           isStreamedByAgent={isStreamedByAgent}
+          cast={stream?.cast}
         />
         {address && <TokenTrade tokenAddress={address as string} />}
       </div>
