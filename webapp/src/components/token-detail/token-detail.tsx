@@ -36,7 +36,7 @@ import { Comment, Livestream, LivestreamError } from "@/types";
 
 const socketUrl = STREAMING_COUNTER_SERVER_URL;
 
-const getLiveStremingByTokenAddress = async (
+const getLivestreamingByTokenAddress = async (
   address: string
 ): Promise<Livestream> => {
   try {
@@ -110,13 +110,17 @@ const TokenDetail = ({ address }: { address: string }) => {
     streamType: null,
   });
 
+  const [castData, setCastData] = useState(null);
+  const [isCastLoading, setIsCastLoading] = useState(false);
+  const [castError, setCastError] = useState(null);
+
   const {
     data: stream,
     error,
     isLoading,
   } = useQuery({
     queryKey: ["stream", address],
-    queryFn: () => getLiveStremingByTokenAddress(address as string),
+    queryFn: () => getLivestreamingByTokenAddress(address as string),
     enabled: !!address,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -196,26 +200,29 @@ const TokenDetail = ({ address }: { address: string }) => {
         isConnectedRoom.current = false;
       }
     };
-  }, [address]); // Solo depende de address
+  }, [address]);
 
-  const {
-    data: castData,
-    isLoading: isCastLoading,
-    error: castError,
-  } = useQuery({
-    queryKey: ["cast", stream?.cast?.pubHash],
-    queryFn: async () => {
-      if (!stream?.cast?.pubHash) throw new Error("No pubHash available");
-      const response = await fetch(`/api/cast?pubHash=${stream.cast.pubHash}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch cast");
+  useEffect(() => {
+    const fetchCastData = async () => {
+      if (!stream) return;
+
+      setIsCastLoading(true);
+      try {
+        const response = await fetch(`/api/cast?pubHash=${stream.pubHash}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch cast");
+        }
+        const data = await response.json();
+        setCastData(data);
+      } catch (error) {
+        console.error("Error fetching cast:", error);
+      } finally {
+        setIsCastLoading(false);
       }
-      return response.json();
-    },
-    enabled: !!stream?.cast?.pubHash,
-    refetchOnWindowFocus: false,
-    staleTime: 1000 * 60 * 5, // 5 minutos
-  });
+    };
+
+    fetchCastData();
+  }, [stream]);
 
   return (
     <div className="grid grid-cols-[320px_1fr] lg:grid-cols-[895px_1fr] gap-4 py-8">

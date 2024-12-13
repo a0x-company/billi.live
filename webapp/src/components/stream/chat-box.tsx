@@ -235,33 +235,47 @@ export const ChatBox: React.FC<{
         <Link
           href={`https://warpcast.com/${cast.author.username}/${cast.pubHash}`}
           target="_blank"
-          className="flex flex-col items-start justify-center h-min bg-black/50 backdrop-blur-sm rounded-xl p-4 mx-4 mt-4 mb-4 cursor-pointer hover:bg-black/70 transition-colors duration-300 line-clamp-1"
+          className="flex flex-col items-start justify-center bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-2xl p-5 mx-4 mt-4 mb-4 hover:from-gray-800 hover:to-gray-900 transition-all duration-300 border border-gray-700/50 shadow-lg hover:shadow-purple-500/10"
         >
-          <div className="flex items-start gap-2">
-            <Image
-              src={cast.author.pfp_url}
-              alt={cast.author.username}
-              width={48}
-              height={48}
-              className="rounded-full"
-            />
-            <div className="flex items-center gap-2 leading-none pt-2">
-              <p className="text-white font-bold">{cast.author.username}</p>
-              <p className="text-gray-400">
+          {/* Header con autor */}
+          <div className="flex items-start gap-3 w-full">
+            <div className="relative">
+              <Image
+                src={cast.author.pfp_url}
+                alt={cast.author.username}
+                width={48}
+                height={48}
+                className="rounded-full ring-2 ring-purple-500/20"
+              />
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900" />
+            </div>
+
+            <div className="flex flex-col gap-0.5">
+              <p className="text-white font-bold hover:text-purple-400 transition-colors">
+                @{cast.author.username}
+              </p>
+              <p className="text-gray-400 text-sm">
                 {format(new Date(cast.timestamp), "HH:mm")}
               </p>
             </div>
           </div>
-          <p className="text-white pt-2">{cast.text}</p>
-          <div className="flex items-center gap-2">
-            <p className="flex items-center gap-1">
+
+          {/* Contenido del cast */}
+          <p className="text-gray-100 pt-3 pb-2 text-[15px] leading-relaxed">
+            {cast.text}
+          </p>
+
+          {/* Footer con reacciones */}
+          <div className="flex items-center gap-4 pt-2 border-t border-gray-700/50 w-full">
+            <button className="flex items-center gap-1.5 text-gray-400 hover:text-pink-500 transition-colors">
               <Heart className="w-4 h-4" />
-              {cast.reactions.likes_count}
-            </p>
-            <p className="flex items-center gap-1">
+              <span className="text-sm">{cast.reactions.likes_count}</span>
+            </button>
+
+            <button className="flex items-center gap-1.5 text-gray-400 hover:text-green-500 transition-colors">
               <Repeat className="w-4 h-4" />
-              {cast.reactions.recasts_count}
-            </p>
+              <span className="text-sm">{cast.reactions.recasts_count}</span>
+            </button>
           </div>
         </Link>
       )}

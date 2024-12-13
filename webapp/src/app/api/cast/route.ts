@@ -1,30 +1,57 @@
 import neynarClient from "@/lib/neynarClient";
+
 import { NextResponse } from "next/server";
 
+import axios from "axios";
+
 export async function GET(req: Request) {
+  console.log("[GET][api/cast]");
+
   const { searchParams } = new URL(req.url);
   const pubHash = searchParams.get("pubHash");
 
-  const cast = {
-    pubHash: "0x984d5117df404f47bd5a72cb5852921aeddb4fad",
-    author: {
-      username: "heybilli",
-      display_name: "Billi",
-      pfp_url:
-        "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/c25730b6-e1db-45ff-e874-f72d5dc05a00/rectcrop3",
-    },
-    text: "GM mfers",
-    timestamp: "2024-12-11T21:54:52.000Z",
-    reactions: {
-      likes_count: 4,
-      recasts_count: 0,
-    },
-    replies: {
-      count: 7,
-    },
-  };
+  try {
+    const response = await axios.get(
+      `https://api.neynar.com/v2/farcaster/cast`,
+      {
+        params: {
+          type: "hash",
+          identifier: pubHash,
+        },
+        headers: {
+          accept: "application/json",
+          api_key: process.env.NEYNAR_API_KEY,
+        },
+      }
+    );
 
-  return NextResponse.json(cast, { status: 200 });
+    // Transformar la respuesta al formato deseado
+    const formattedCast = {
+      pubHash: response.data.cast.hash,
+      author: {
+        username: response.data.cast.author.username,
+        display_name: response.data.cast.author.display_name,
+        pfp_url: response.data.cast.author.pfp_url,
+      },
+      text: response.data.cast.text,
+      timestamp: response.data.cast.timestamp,
+      reactions: {
+        likes_count: response.data.cast.reactions.likes_count,
+        recasts_count: response.data.cast.reactions.recasts_count,
+      },
+      replies: {
+        count: response.data.cast.replies.count,
+      },
+    };
+
+    return NextResponse.json(formattedCast, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to fetch cast" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req: Request) {
