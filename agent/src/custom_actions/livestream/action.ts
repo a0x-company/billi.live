@@ -8,10 +8,11 @@ import {
   generateText,
 } from "@ai16z/eliza";
 import { TextGenerator } from "./text-generator.ts";
-import { LivestreamService } from "./service.ts";
+import { LivestreamService } from "./services/livestream.ts";
 import { StreamDetailsExtractor } from "./extractor.ts";
 import { getCastByHash } from "../../clients/utils.ts";
 import { MessageMetadata } from "./types.ts";
+import { TokenService } from "./services/token.ts";
 
 const livestreamUrl = "https://billi.live";
 const API_URL = process.env.API_URL;
@@ -82,6 +83,7 @@ export const livestreamGeneration: Action = {
   ) => {
     const textGenerator = new TextGenerator(runtime);
     const livestreamService = new LivestreamService(API_URL);
+    const tokenService = new TokenService();
     const detailsExtractor = new StreamDetailsExtractor(runtime);
 
     const metadata = message.content.metadata as MessageMetadata;
@@ -89,11 +91,11 @@ export const livestreamGeneration: Action = {
     const castHash = metadata?.castHash;
 
     // Caso 3: Respuesta de Clanker con token address
-    if (sender === "clanker" && metadata?.embeds?.length > 0) {
+    if (sender === "clanker") {
       const tokenAddress =
-        metadata.embeds[0].url.match(/0x[a-fA-F0-9]{40}/)?.[0];
+        metadata?.embeds?.[0]?.url.match(/0x[a-fA-F0-9]{40}/)?.[0];
 
-      if (tokenAddress && metadata.parentHash) {
+      if (metadata.parentHash) {
         const parentCast = await getCastByHash(metadata.parentHash);
         const originalCast = await getCastByHash(
           parentCast.cast.parent_hash || ""
@@ -104,13 +106,30 @@ export const livestreamGeneration: Action = {
             originalCast.cast.text
           );
 
+          let finalTokenAddress = tokenAddress;
+          if (!tokenAddress) {
+            try {
+              finalTokenAddress = await tokenService.deployToken(
+                streamDetails.tokenName,
+                streamDetails.tokenSymbol
+              );
+            } catch (error) {
+              console.error("Token deployment failed:", error);
+              await callback({
+                text: `Error al desplegar el token: ${error.message}`,
+                replyTo: castHash,
+              });
+              return;
+            }
+          }
+
           const response = await livestreamService.createLivestream({
             handle: originalCast.cast.author.username,
             title: streamDetails.title,
             description: streamDetails.description,
             pfpUrl: originalCast.cast.author.pfp_url,
             pubHash: castHash || "",
-            tokenAddress,
+            tokenAddress: finalTokenAddress,
           });
 
           if (response?.message === "livestream created successfully") {
@@ -118,7 +137,7 @@ export const livestreamGeneration: Action = {
               message,
               "success_message",
               {
-                livestreamLink: `${livestreamUrl}/token/${tokenAddress}`,
+                livestreamLink: `${livestreamUrl}/token/${finalTokenAddress}`,
                 title: streamDetails.title,
                 tokenSymbol: streamDetails.tokenSymbol,
               }

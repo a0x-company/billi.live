@@ -1,5 +1,5 @@
 import { elizaLogger } from "@ai16z/eliza";
-import { LivestreamCreateParams, StreamDetails } from "./types.ts";
+import { LivestreamCreateParams, StreamDetails } from "../types.ts";
 
 export class LivestreamService {
   constructor(private apiUrl: string) {}
