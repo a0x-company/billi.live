@@ -12,6 +12,7 @@ import { convertTextToSpeechHandler } from "./convert-text-to-speech-handler";
 
 // types
 import { Livestream } from "@internal/livestreams/types";
+import { updateStreamedByAgentHandler } from "./update-livestream-by-agent";
 
 export type Context = {
   livestreamService: LivestreamManager;
@@ -33,6 +34,7 @@ interface LivestreamManager {
   convertTextToSpeech(text: string): Promise<any>;
   publishLivestream(livestream: Livestream): Promise<string | void>;
   talkToAgent(message: string): Promise<string>;
+  updateStreamedByAgent(streamId: string, isStreamedByAgent: boolean): Promise<Livestream | null>;
 }
 
 export function livestreamsRoutes(router: Express, ctx: Context) {
@@ -53,5 +55,6 @@ export function livestreamsRoutes(router: Express, ctx: Context) {
 
   livestreamsRouter.post("/convert-text-to-speech", convertTextToSpeechHandler(ctx));
 
+  livestreamsRouter.post("/streamed-by-agent", updateStreamedByAgentHandler(ctx));
   router.use("/livestreams", livestreamsRouter);
 }
