@@ -14,6 +14,27 @@ import { getCastByHash } from "../../clients/utils.ts";
 import { MessageMetadata } from "./types.ts";
 import { TokenService } from "./services/token.ts";
 
+async function findClankerTokenAddress(
+  parentHash: string | undefined
+): Promise<string | undefined> {
+  let currentHash = parentHash;
+
+  while (currentHash) {
+    const cast = await getCastByHash(currentHash);
+    if (!cast) break;
+
+    if (cast.cast.author.username === "clanker" && cast.cast.embeds?.[0]?.url) {
+      const tokenAddress =
+        cast.cast.embeds[0].url.match(/0x[a-fA-F0-9]{40}/)?.[0];
+      if (tokenAddress) return tokenAddress;
+    }
+
+    currentHash = cast.cast.parent_hash;
+  }
+
+  return undefined;
+}
+
 const livestreamUrl = "https://billi.live";
 const API_URL = process.env.API_URL;
 
@@ -57,7 +78,15 @@ export const livestreamGeneration: Action = {
         
         IMPORTANT:
         - New livestream request or new token info = "true"
+        - Intent to start/begin an existing stream = "true"
         - Already processed token or unrelated = "false"
+        
+        VALID INTENTS:
+        - Creating new livestream
+        - Providing stream/token details
+        - Starting/initiating an existing stream
+        - Any expression indicating readiness to go live
+        - Any language or way of expressing desire to begin streaming
         
         Message: ${message.content.text}
         
@@ -89,6 +118,46 @@ export const livestreamGeneration: Action = {
     const metadata = message.content.metadata as MessageMetadata;
     const sender = metadata?.author?.username;
     const castHash = metadata?.castHash;
+
+    const isStartStreamIntent = await generateText({
+      runtime,
+      context: `
+        Analyze if this message indicates an intention to START an existing stream (not create a new one).
+        Message: ${message.content.text}
+        Respond only with "true" or "false"
+      `,
+      modelClass: ModelClass.SMALL,
+      stop: ["\n"],
+    });
+
+    if (
+      isStartStreamIntent.trim().toLowerCase() === "true" &&
+      metadata.parentHash
+    ) {
+      const tokenAddress = await findClankerTokenAddress(metadata.parentHash);
+      if (tokenAddress) {
+        const livestreamInfo =
+          await livestreamService.getLivestreamByTokenAddress(tokenAddress);
+        if (livestreamInfo) {
+          await livestreamService.updateStreamedByAgent(tokenAddress, true);
+
+          const startMessage = await textGenerator.generateContextAwareText(
+            message,
+            "start_stream",
+            {
+              livestreamLink: `${livestreamUrl}/token/${tokenAddress}`,
+              handle: livestreamInfo.handle,
+            }
+          );
+
+          await callback({
+            text: startMessage,
+            replyTo: livestreamInfo.castHash || castHash,
+          });
+          return;
+        }
+      }
+    }
 
     // Caso 3: Respuesta de Clanker con token address
     if (sender === "clanker") {
