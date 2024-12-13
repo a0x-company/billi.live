@@ -89,7 +89,7 @@ export const ChatBox: React.FC<{
     if (socketRef.current) {
       socketRef.current.emit("newComment", {
         streamId: normalizedAddress,
-        isAgent: isStreamedByAgent,
+        hosterIsAgent: isStreamedByAgent,
         ...message,
       });
     }

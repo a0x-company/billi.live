@@ -178,12 +178,26 @@ const TokenDetail = ({ address }: { address: string }) => {
       setComments(prevComments);
     });
 
-    if (stream?.streamedByAgent) {
-      socket.on("new-audio", ({ audio, text }) => {
-        setCurrentText(text);
-        // ... resto del código de manejo de audio ...
+    socket.on("new-audio", ({ audio, text }) => {
+      setCurrentText(text);
+      const audioData = atob(audio);
+      const arrayBuffer = new ArrayBuffer(audioData.length);
+      const uint8Array = new Uint8Array(arrayBuffer);
+      for (let i = 0; i < audioData.length; i++) {
+        uint8Array[i] = audioData.charCodeAt(i);
+      }
+      const blob = new Blob([uint8Array], { type: "audio/mp3" });
+      const audioUrl = URL.createObjectURL(blob);
+      if (audioRef.current) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.play().catch(console.error);
+      }
+
+      audioRef.current?.addEventListener("ended", () => {
+        URL.revokeObjectURL(audioUrl);
+        setTimeout(() => setCurrentText(""), 1000);
       });
-    }
+    });
 
     // Cleanup function
     return () => {
@@ -227,6 +241,7 @@ const TokenDetail = ({ address }: { address: string }) => {
   return (
     <div className="grid grid-cols-[320px_1fr] lg:grid-cols-[895px_1fr] gap-4 py-8">
       <audio ref={audioRef} className="hidden" />
+
       <div className="grid grid-cols-1 grid-rows-[655px_1fr] gap-4">
         <div className="flex flex-col gap-4">
           {isLoading && (
