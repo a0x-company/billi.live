@@ -63,7 +63,7 @@ export function BilliPresentation() {
           <p className="font-bold">Start streaming</p>
         </button> */}
         <a
-          href="https://warpcast.com"
+          href="https://warpcast.com/~/compose?text=@heybilli I want to start streaming"
           target="_blank"
           rel="noopener noreferrer"
           className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
