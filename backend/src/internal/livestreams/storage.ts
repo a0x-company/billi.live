@@ -188,6 +188,7 @@ export class LivestreamStorage {
           streamedByAgent: data.streamedByAgent,
           cast: data.cast,
           pfpUrl: data.pfpUrl,
+          pubHash: data.pubHash,
         };
       }
 
