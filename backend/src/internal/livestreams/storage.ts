@@ -119,7 +119,6 @@ export class LivestreamStorage {
         return {
           handle: data.handle,
           title: data.title,
-          description: data.description,
           livepeerInfo: data.livepeerInfo,
           createdAt: data.createdAt,
           castInFarcaster: data.castInFarcaster,
@@ -151,7 +150,6 @@ export class LivestreamStorage {
         return {
           handle: data.handle,
           title: data.title,
-          description: data.description,
           livepeerInfo: data.livepeerInfo,
           createdAt: data.createdAt,
           castInFarcaster: data.castInFarcaster,
@@ -184,7 +182,6 @@ export class LivestreamStorage {
         return {
           handle: data.handle,
           tokenAddress: data.tokenAddress,
-          description: data.description,
           title: data.title,
           livepeerInfo: data.livepeerInfo,
           createdAt: data.createdAt,

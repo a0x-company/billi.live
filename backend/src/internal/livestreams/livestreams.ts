@@ -107,6 +107,7 @@ export class LivestreamService {
       srtIngestUrl: `srt://rtmp.livepeer.com:2935?streamid=${livepeerResponse.streamKey}`,
     };
 
+    /* DELETE THIS */
     let castInFarcaster;
     try {
       castInFarcaster = await this.farcasterSvc.getCastInFarcasterByPubHash(pubHash);

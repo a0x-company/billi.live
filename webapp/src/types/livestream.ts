@@ -42,6 +42,7 @@ export interface Comment {
 
 export interface Cast {
   pubHash: string;
+  hash: string;
   author: {
     username: string;
     display_name: string;
@@ -56,4 +57,9 @@ export interface Cast {
   replies: {
     count: number;
   };
+}
+
+export enum CastError {
+  CAST_NOT_FOUND = "Cast not found",
+  UNKNOWN_ERROR = "An unknown error occurred",
 }

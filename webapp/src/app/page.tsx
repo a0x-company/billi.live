@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen">
       {/* Main content with margin for both columns */}
-      <main className="flex-1">
+      <main className="flex-1 max-md:max-w-full">
         <section className="relative min-h-screen">
           {/* Background video with overlay */}
           <div className="absolute inset-0 z-0">

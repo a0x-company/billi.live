@@ -3,13 +3,14 @@ import axios from "axios";
 
 import { CreateLivestreamLivepeerResponse } from "./types";
 
+// config
+import { LIVEPEER_API_KEY } from "@internal/config";
+
 export class LivepeerService {
   public async createLivestream(
     name: string,
     record: boolean
   ): Promise<CreateLivestreamLivepeerResponse> {
-    const LIVEPEER_API_KEY = "7dbfcf3b-155e-4312-98dc-1db53bb28da2";
-
     const livepeerUrl = "https://livepeer.studio/api/stream";
 
     try {

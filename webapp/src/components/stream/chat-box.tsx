@@ -84,14 +84,15 @@ export const ChatBox: React.FC<{
       comment: newMessage.trim(),
       timestamp: new Date().toISOString(),
     };
-    console.log("message", message);
     const normalizedAddress = address.toString().toLowerCase();
     if (socketRef.current) {
+      console.log("socketRef.current", socketRef.current);
       socketRef.current.emit("newComment", {
         streamId: normalizedAddress,
         hosterIsAgent: isStreamedByAgent,
         ...message,
       });
+      console.log("message sent");
     }
     setNewMessage("");
   };
@@ -230,10 +231,9 @@ export const ChatBox: React.FC<{
         </div>
       )}
 
-      {/* SHOW CAST ABSOLUTE FLOATING */}
       {cast && (
         <Link
-          href={`https://warpcast.com/${cast.author.username}/${cast.pubHash}`}
+          href={`https://warpcast.com/${cast.author.username}/${cast.hash}`}
           target="_blank"
           className="flex flex-col items-start justify-center bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-2xl p-5 mx-4 mt-4 mb-4 hover:from-gray-800 hover:to-gray-900 transition-all duration-300 border border-gray-700/50 shadow-lg hover:shadow-purple-500/10"
         >
@@ -295,12 +295,10 @@ export const ChatBox: React.FC<{
                 target="_blank"
                 className="flex items-center gap-2"
               >
-                <Image
+                <img
                   src={msg.pfp || "/assets/stream/billi-pfp.png"}
                   alt={msg.handle}
-                  width={24}
-                  height={24}
-                  className="rounded-full"
+                  className="rounded-full object-cover aspect-square w-8 h-8"
                 />
                 <span className="font-semibold text-sm text-white">
                   {msg.handle}

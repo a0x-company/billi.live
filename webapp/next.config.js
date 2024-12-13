@@ -1,11 +1,43 @@
 const nextConfig = {
+  webpack(config) {
+    config.externals.push("pino-pretty");
+
+    return config;
+  },
   images: {
-    domains: [
-      "imagedelivery.net",
-      "images.unsplash.com",
-      "s2.coinmarketcap.com",
-      "i.imgur.com",
-      "pbs.twimg.com",
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*",
+      },
+      {
+        protocol: "http",
+        hostname: "*",
+      },
+      {
+        protocol: "https",
+        hostname: "imagedelivery.net",
+        port: "",
+        pathname: "/*/**",
+      },
+      {
+        hostname: "ik.imagekit.io",
+      },
+      {
+        hostname: "arweave.net",
+      },
+      {
+        hostname: "storage.googleapis.com",
+      },
+      {
+        hostname: "i.imgur.com",
+      },
+      {
+        hostname: "supercast.mypinata.cloud",
+      },
+      {
+        hostname: "i.seadn.io",
+      },
     ],
   },
 };
