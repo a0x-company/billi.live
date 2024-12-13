@@ -8,6 +8,7 @@ import {
   ModelClass,
   State,
 } from "@ai16z/eliza";
+import { getCastByHash } from "../clients/utils";
 
 interface MessageMetadata {
   castHash?: string;
@@ -18,13 +19,7 @@ interface MessageMetadata {
   embeds?: {
     url: string;
   }[];
-  conversationHistory?: {
-    author: string;
-    text: string;
-    timestamp: string;
-    id: string;
-    pfp_url: string;
-  }[];
+  parentHash?: string;
 }
 
 interface StreamDetails {
@@ -50,17 +45,23 @@ const generateContextAwareText = async (
     livestreamLink?: string;
   }
 ) => {
-  const conversationHistory =
-    (message.content.metadata as MessageMetadata)?.conversationHistory || [];
-  const previousMessages = conversationHistory
-    .slice(-10)
-    .map((msg) => `${msg.author}: ${msg.text}`)
-    .join("\n");
+  const personalityContext = `
+    You are ${runtime.character.name}.
+    
+    YOUR PERSONALITY (STAY TRUE TO THIS):
+    - Core traits: ${runtime.character.adjectives.join(", ")}
+    - Writing style: ${runtime.character.style.chat.join(", ")}
+    - Your essence: ${
+      Array.isArray(runtime.character.bio)
+        ? runtime.character.bio.join(" ")
+        : runtime.character.bio
+    }
+    - Your background: ${runtime.character.lore.join(" ")}
+  `;
 
   const contextTemplate = {
     request_details: `
-      Previous conversation:
-      ${previousMessages}
+      ${personalityContext}
       
       TASK: Request these missing details naturally: ${details?.missingFields?.join(
         ", "
@@ -78,8 +79,7 @@ const generateContextAwareText = async (
       "give me the title and description of your legacy"
     `,
     token_creation: `
-      Previous conversation:
-      ${previousMessages}
+      ${personalityContext}
       
       TASK: Request token creation from @clanker
       Token details:
@@ -93,8 +93,7 @@ const generateContextAwareText = async (
       - Maximum 320 characters
     `,
     success_message: `
-      Previous conversation:
-      ${previousMessages}
+      ${personalityContext}
       
       TASK: Announce successful livestream creation
       Details:
@@ -152,39 +151,20 @@ const createLivestream = async ({
 
 const extractStreamDetails = async (
   runtime: IAgentRuntime,
-  message: Memory
+  text: string
 ): Promise<StreamDetails> => {
-  const metadata = message.content.metadata as MessageMetadata;
-  const conversationHistory = metadata?.conversationHistory || [];
-  let messageToAnalyze = message.content.text;
-
-  if (conversationHistory.length > 0) {
-    messageToAnalyze = `
-      Previous messages:
-      ${conversationHistory
-        .map((msg) => `${msg.author}: ${msg.text}`)
-        .join("\n")}
-      Current message:
-      ${message.content.text}
-    `;
-  }
-
   const extractionContext = `
-    Extract the following information from the conversation and respond with the extracted information in JSON format.
-    Look through all messages in the conversation for these details.
+    Extract the following information and respond with JSON format.
     
     IMPORTANT: 
-    - Return ONLY the JSON object, no markdown formatting, no backticks
-    - If any field is missing or not explicitly stated in any message, return it as an empty string ("")
-    - Look for variations of the fields in any language
-    - For symbols, if it starts with "$", include it without the "$"
-    - Extract only the value after any separator (: or similar)
-    - Remove any leading/trailing whitespace
-    - Check ALL messages in the conversation for the required information
-    - For token information, look for both symbol and name
+    - Return ONLY the JSON object
+    - Empty string ("") for missing fields
+    - Include $ in symbols
+    - Extract values after any separator (: or similar)
+    - Remove leading/trailing whitespace
   
-    Conversation:
-    ${messageToAnalyze}
+    Text to analyze:
+    ${text}
   
     Return only JSON (no markdown, no backticks):
     {
@@ -202,10 +182,7 @@ const extractStreamDetails = async (
     stop: ["\n"],
   });
 
-  return {
-    ...JSON.parse(details),
-    handle: metadata?.author?.username || "",
-  };
+  return JSON.parse(details);
 };
 
 const getMissingFields = (details: StreamDetails): string[] => {
@@ -243,36 +220,26 @@ export const livestreamGeneration: Action = {
     "- General greetings or questions\n" +
     "- Mentions of 'live' or 'stream' in different contexts\n" +
     "- Questions about existing livestreams\n\n" +
-    "Only trigger if user clearly indicates intention to CREATE a new livestream. " +
-    "The validation step will handle additional checks.",
+    "Only trigger if user clearly indicates intention to CREATE a new livestream.",
 
   validate: async (runtime: IAgentRuntime, message: Memory) => {
     const metadata = message.content.metadata as MessageMetadata;
-    const sender = metadata?.author?.username || "";
+    const sender = metadata?.author?.username;
 
     if (sender === "clanker") {
       return metadata?.embeds?.length > 0;
     }
 
     const contextAnalysis = `
-      Analiza esta conversación y determina si procesar el mensaje actual.
-  
-      CONTEXTO IMPORTANTE:
-      - Si el mensaje actual menciona un token symbol/name específico, verifica si Billi (heybilli) ya le pidió a clanker crear ese mismo token
-      - Si el mensaje es una nueva solicitud de livestream o proporciona información de un nuevo token (diferente symbol/name), responde "true"
-      - Si Billi ya solicitó a clanker crear exactamente el mismo token (mismo symbol/name), responde "false"
-  
-      Historial de conversación:
-      ${
-        metadata?.conversationHistory
-          ?.map((msg) => `${msg.author}: ${msg.text}`)
-          .join("\n") || ""
-      }
-  
-      Mensaje actual:
-      ${metadata?.author?.username || ""}: ${message.content.text}
-  
-      Responde solo con "true" o "false"
+      ${runtime.character.name} here. Analyze if I should process this message.
+      
+      IMPORTANT:
+      - New livestream request or new token info = "true"
+      - Already processed token or unrelated = "false"
+      
+      Message: ${message.content.text}
+      
+      Respond only with "true" or "false"
     `;
 
     const intentAnalysis = await generateText({
@@ -292,71 +259,93 @@ export const livestreamGeneration: Action = {
     options: any,
     callback: HandlerCallback
   ) => {
-    elizaLogger.log("Procesando solicitud de livestream...");
     const metadata = message.content.metadata as MessageMetadata;
-    const sender = metadata?.author?.username || "";
+    const sender = metadata?.author?.username;
+    const castHash = metadata?.castHash;
 
-    // Extraer detalles del stream
-    const parsedDetails = await extractStreamDetails(runtime, message);
-
-    // Manejo de respuesta de clanker
+    // Caso 3: Respuesta de Clanker con token address
     if (sender === "clanker" && metadata?.embeds?.length > 0) {
-      const embedUrl = metadata.embeds[0].url;
-      const match = embedUrl.match(/0x[a-fA-F0-9]{40}/);
+      const tokenAddress =
+        metadata.embeds[0].url.match(/0x[a-fA-F0-9]{40}/)?.[0];
 
-      if (match) {
-        const tokenAddress = match[0];
-        const response = await createLivestream({
-          handle: parsedDetails.handle || "",
-          title: parsedDetails.title,
-          description: parsedDetails.description,
-          pfpUrl: metadata?.author?.pfp_url || "",
-          pubHash: metadata?.castHash || "",
-          tokenAddress,
-        });
+      if (tokenAddress && metadata.parentHash) {
+        const parentCast = await getCastByHash(metadata.parentHash);
+        const originalCast = await getCastByHash(
+          parentCast.cast.parent_hash || ""
+        );
 
-        if (response?.message === "livestream created successfully") {
-          const livestreamLink = `${livestreamUrl}/token/${tokenAddress}`;
-          const successMessage = await generateContextAwareText(
+        if (originalCast) {
+          const streamDetails = await extractStreamDetails(
             runtime,
-            message,
-            "success_message",
-            {
-              livestreamLink,
-              title: parsedDetails.title,
-              tokenSymbol: parsedDetails.tokenSymbol,
-            }
+            originalCast.cast.text
           );
-          await callback({ text: successMessage });
+
+          const response = await createLivestream({
+            handle: originalCast.cast.author.username,
+            title: streamDetails.title,
+            description: streamDetails.description,
+            pfpUrl: originalCast.cast.author.pfp_url,
+            pubHash: castHash || "",
+            tokenAddress,
+          });
+
+          if (response?.message === "livestream created successfully") {
+            const successMessage = await generateContextAwareText(
+              runtime,
+              message,
+              "success_message",
+              {
+                livestreamLink: `${livestreamUrl}/token/${tokenAddress}`,
+                title: streamDetails.title,
+                tokenSymbol: streamDetails.tokenSymbol,
+              }
+            );
+            await callback({
+              text: successMessage,
+              replyTo: castHash,
+            });
+          }
         }
       }
       return;
     }
 
-    // Verificar campos faltantes
-    const missingFields = getMissingFields(parsedDetails);
+    // Caso 1 y 2: Usuario solicita stream o proporciona datos
+    const streamDetails = await extractStreamDetails(
+      runtime,
+      message.content.text
+    );
+    const missingFields = getMissingFields(streamDetails);
+
     if (missingFields.length > 0) {
-      const requestDetails = await generateContextAwareText(
+      // Caso 1: Faltan detalles
+      const requestMessage = await generateContextAwareText(
         runtime,
         message,
         "request_details",
         { missingFields }
       );
-      await callback({ text: requestDetails });
-      return;
+      await callback({
+        text: requestMessage,
+        replyTo: castHash,
+      });
+    } else {
+      // Caso 2: Tenemos todos los datos
+      const deployMessage = await generateContextAwareText(
+        runtime,
+        message,
+        "token_creation",
+        {
+          tokenName: streamDetails.tokenName,
+          tokenSymbol: streamDetails.tokenSymbol,
+        }
+      );
+      await callback({
+        text: deployMessage,
+        replyTo: castHash,
+        fromAction: true,
+      });
     }
-
-    // Solicitar creación de token
-    const deployRequest = await generateContextAwareText(
-      runtime,
-      message,
-      "token_creation",
-      {
-        tokenName: parsedDetails.tokenName,
-        tokenSymbol: parsedDetails.tokenSymbol,
-      }
-    );
-    await callback({ text: deployRequest });
   },
 
   examples: [
@@ -369,19 +358,6 @@ export const livestreamGeneration: Action = {
         user: "{{agentName}}",
         content: {
           text: "ready to make you famous. let's see what you got",
-          action: "GENERATE_LIVESTREAM",
-        },
-      },
-    ],
-    [
-      {
-        user: "{{user1}}",
-        content: { text: "Quiero empezar un stream o live" },
-      },
-      {
-        user: "{{agentName}}",
-        content: {
-          text: "listo para hacerte famoso. muestra lo que tienes",
           action: "GENERATE_LIVESTREAM",
         },
       },
