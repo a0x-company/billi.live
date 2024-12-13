@@ -1,12 +1,8 @@
 {
   "name": "Billi",
-  "clients": ["direct", "farcaster"],
+  "clients": ["farcaster"],
   "modelProvider": "openai",
   "settings": {
-    "secrets": {
-      "DISCORD_APPLICATION_ID": "1314005276436860928",
-      "DISCORD_API_TOKEN": "MTMxNDAwNTI3NjQzNjg2MDkyOA.Gc_al_.r5wWLrMNd74TngB0n6LZnLwFMCgPsGVRaVhLzo"
-    },
     "voice": {
       "model": "en_US-male-deep"
     }
