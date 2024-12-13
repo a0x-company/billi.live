@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Webapp (billi.live)
 
-## Getting Started
+## Table of Contents
 
-First, run the development server:
+- [Description](#description)
+- [Technologies Used](#technologies-used)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Available Scripts](#available-scripts)
+- [Contributing](#contributing)
+- [License](#license)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Description
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`billi.live` is a livestreaming platform designed for tokens, enabling users to broadcast live and manage their streams efficiently. The application is built with Next.js, integrating multiple APIs to handle authentication, livestreaming, and communication with automated agents.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Technologies Used
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Next.js**: React framework for building web applications.
+- **TypeScript**: Superset of JavaScript with static typing.
+- **Tailwind CSS**: Utility-first CSS framework for rapid UI development.
+- **Axios**: HTTP client for making API requests.
+- **NextAuth.js**: Authentication library for Next.js.
+- **Livepeer**: Platform for livestreaming.
+- **Three.js**: JavaScript 3D library for creating animated graphics.
+- **Farcaster**: Platform for user authentication and management.
+- **Firebase**: Backend services for actions like saving and updating users.
+- **HLS.js**: JavaScript library that plays HLS (HTTP Live Streaming) in browsers that do not natively support it.
 
-## Learn More
+## Installation
 
-To learn more about Next.js, take a look at the following resources:
+1. **Clone the repository:**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   ```bash
+   git clone https://github.com/a0x-company/billi.live.git
+   cd webapp
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Install dependencies:**
 
-## Deploy on Vercel
+   ```bash
+   npm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. **Configure environment variables:**
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   Create a `.env` file in the root of the project and add the necessary variables. Refer to the `.env` files within the `webapp`, `agent`, and `backend` directories for more details.
+
+   ```env
+   # webapp/.env
+   API_URL=https://api.your-domain.com
+   NEYNAR_API_KEY=your_api_key
+   # ... other variables
+
+   # agent/.env
+   # Variables for the agent
+
+   # backend/src/cmd/billi-backend/.env
+   # Variables for the backend
+   ```
+
+## Configuration
+
+Ensure that the environment variables are correctly set in the `.env` files mentioned above. Additionally, review the ESLint configuration in `.eslintrc.json` to maintain code quality.
+
+## Usage
+
+1. **Start the development server:**
+
+   ```bash
+   npm run dev
+   ```
+
+   The application will be available at [http://localhost:3000](http://localhost:3000).
+
+2. **Build for production:**
+
+   ```bash
+   npm run build
+   ```
+
+3. **Start the production server:**
+
+   ```bash
+   npm start
+   ```
+
+## Available Scripts
+
+- `npm run dev`: Starts the server in development mode.
+- `npm run build`: Builds the application for production.
+- `npm start`: Starts the server in production mode.
+- `npm run lint`: Runs ESLint to check code quality.
+- `npm run format`: Formats the code using Prettier.
