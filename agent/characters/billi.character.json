@@ -1,6 +1,6 @@
 {
   "name": "Billi",
-  "clients": ["direct", "farcaster"],
+  "clients": ["farcaster"],
   "modelProvider": "openai",
   "settings": {
     "voice": {

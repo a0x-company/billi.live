@@ -70,166 +70,163 @@ const messageCompletionFooter =
   '\nResponse format should be formatted in a JSON block like this:\n```json\n{ "user": "{{agentName}}", "text": string, "action": "string" }\n```\n\nIMPORTANT:\n- The text field should NEVER include the action\n- The action goes ONLY in the action field\n\nExamples:\nBAD: { "user": "{{agentName}}", "text": "going silent (MUTE_ROOM)", "action": "MUTE_ROOM" }\nBAD: { "user": "{{agentName}}", "text": "let\'s talk more about that (CONTINUE)", "action": "CONTINUE" }\nGOOD: { "user": "{{agentName}}", "text": "going silent", "action": "MUTE_ROOM" }\nGOOD: { "user": "{{agentName}}", "text": "let\'s talk more about that", "action": "CONTINUE" }';
 const farcasterMessageTemplate =
   `
-# Sobre {{agentName}}
-{{bio}}
-{{lore}}
-{{topics}}
-
-# Rasgos de Personalidad
-{{adjective}}
-Intereses actuales: {{topic}}
-
-# Contexto de la Mención
-Plataforma: {{platform}}
-Tipo: {{messageType}}
-Canal: {{channelName}}
-Descripción del canal: {{channelDescription}}
-
-# Mensaje Actual
-De: {{senderName}} ({{authorDisplayName}})
-Mensaje: {{message}}
-
-# Hilo de Conversación
-{{conversationHistory}}
-
-# Contexto de Conocimiento
-{{knowledge}}
-
-# Guías de Estilo
-{{messageDirections}}
-{{postDirections}}
-
-# Ejemplos de Conversaciones
-{{characterMessageExamples}}
-
-# Instrucciones
-Eres {{agentName}} respondiendo a una mención en Farcaster de {{senderName}}.
-Mantén las respuestas concisas (máx 320 caracteres) y conserva tu personalidad.
-Incluye una acción si es apropiado. {{actionNames}}
-
-# Acciones disponibles:
-{{actions}}
-# Action Examples
-{{actionExamples}}
-` + messageCompletionFooter;
-
+  # About {{agentName}}
+  {{bio}}
+  {{lore}}
+  {{topics}}
+  
+  # Personality Traits
+  {{adjective}}
+  Current interests: {{topic}}
+  
+  # Mention Context
+  Platform: {{platform}}
+  Type: {{messageType}}
+  Channel: {{channelName}}
+  Channel description: {{channelDescription}}
+  
+  # Current Message
+  From: {{senderName}} ({{authorDisplayName}})
+  Message: {{message}}
+  
+  # Conversation Thread
+  {{conversationHistory}}
+  
+  # Knowledge Context
+  {{knowledge}}
+  
+  # Style Guidelines
+  {{messageDirections}}
+  {{postDirections}}
+  
+  # Conversation Examples
+  {{characterMessageExamples}}
+  
+  # Instructions
+  You are {{agentName}} responding to a Farcaster mention from {{senderName}}.
+  Keep responses concise (max 320 characters) and maintain your personality.
+  Include an action if appropriate. {{actionNames}}
+  
+  # Available Actions:
+  {{actions}}
+  # Action Examples
+  {{actionExamples}}
+  ` + messageCompletionFooter;
 const farcasterShouldRespondTemplate =
   `
-# Sobre {{agentName}}
+# About {{agentName}}
 {{bio}}
 {{adjective}}
 
-# Contexto Actual
-Tipo: {{messageType}}
-Plataforma: {{platform}}
-Estado del hilo: {{threadContext}}
-Es respuesta: {{isReply}}
-Canal: {{channelName}}
-Descripción del canal: {{channelDescription}}
+# Current Context
+Type: {{messageType}}
+Platform: {{platform}}
+Thread status: {{threadContext}}
+Is reply: {{isReply}}
+Channel: {{channelName}}
+Channel description: {{channelDescription}}
 
-# Contexto de Conversación
-Mensajes recientes:
+# Conversation Context
+Recent messages:
 {{recentMessages}}
 
-# Información del Mensaje
-Remitente: {{senderName}} ({{authorDisplayName}})
-Mensaje: {{message}}
-Usuario actual en Farcaster: {{actualUsername}}
+# Message Information
+Sender: {{senderName}} ({{authorDisplayName}})
+Message: {{message}}
+Current Farcaster user: {{actualUsername}}
 
-# Instrucciones
-Decide si responder basado en:
-1. ¿Es el mensaje apropiado?
-2. ¿Requiere una respuesta?
-3. ¿El tono y contenido son adecuados para la interacción?
+# Instructions
+Decide whether to respond based on:
+1. Is the message appropriate?
+2. Does it require a response?
+3. Are the tone and content suitable for interaction?
 
-Las opciones de respuesta son [RESPOND], [IGNORE] y [STOP].
+Response options are [RESPOND], [IGNORE], and [STOP].
 ` + shouldRespondFooter;
-
 const farcasterReplyMessageTemplate =
   `
-# Sobre {{agentName}}
+# About {{agentName}}
 {{bio}}
 {{lore}}
 {{topics}}
 
-# Rasgos de Personalidad
+# Personality Traits
 {{adjective}}
-Intereses actuales: {{topic}}
+Current interests: {{topic}}
 
-# Mensaje Actual
-De: {{senderName}} ({{authorDisplayName}})
-Mensaje: {{message}}
+# Current Message
+From: {{senderName}} ({{authorDisplayName}})
+Message: {{message}}
 
-# Hilo de Conversación
+# Conversation Thread
 {{conversationHistory}}
 
-# Contexto de Conocimiento
+# Knowledge Context
 {{knowledge}}
 
-# Guías de Estilo
+# Style Guidelines
 {{messageDirections}}
 {{postDirections}}
 
-# Ejemplos de Conversaciones
+# Conversation Examples
 {{characterMessageExamples}}
 
-# Instrucciones
-Eres {{agentName}} respondiendo a una respuesta en Farcaster de {{senderName}}.
-Mantén las respuestas concisas (máx 320 caracteres) y conserva tu personalidad.
-Incluye una acción si es apropiado. {{actionNames}}
+# Instructions
+You are {{agentName}} responding to a Farcaster reply from {{senderName}}.
+Keep responses concise (max 320 characters) and maintain your personality.
+Include an action if appropriate. {{actionNames}}
 
-# Acciones disponibles:
+# Available Actions:
 {{actions}}
 # Action Examples
 {{actionExamples}}
 ` + messageCompletionFooter;
-
 const farcasterShouldRespondToReplyTemplate =
   `
-# Sobre {{agentName}}
+# About {{agentName}}
 {{bio}}
 {{adjective}}
 
-# Contexto de la Plataforma
-Plataforma: {{platform}}
-Tipo: {{messageType}}
-Estado del hilo: {{isThread}}
-Canal: {{channelName}}
-Tema del canal: {{channelDescription}}
-Nivel de engagement: {{engagement}}
+# Platform Context
+Platform: {{platform}}
+Type: {{messageType}}
+Thread status: {{isThread}}
+Channel: {{channelName}}
+Channel topic: {{channelDescription}}
+Engagement level: {{engagement}}
 
-# Contexto de Conversación
-Interacciones previas con este usuario: {{recentMessageInteractions}}
-Contexto del hilo: {{threadContext}}
-Mensajes recientes: {{conversationHistory}}
+# Conversation Context
+Previous interactions with this user: {{recentMessageInteractions}}
+Thread context: {{threadContext}}
+Recent messages: {{conversationHistory}}
 
-# Información del Mensaje
-Remitente: {{senderName}} ({{authorDisplayName}})
-Perfil: {{authorUsername}}
-Foto de perfil: {{authorProfilePicture}}
-Mensaje: {{message}}
-Likes en la conversación: {{likesCount}}
-Usuario actual en Farcaster: {{actualUsername}}
+# Message Information
+Sender: {{senderName}} ({{authorDisplayName}})
+Profile: {{authorUsername}}
+Profile picture: {{authorProfilePicture}}
+Message: {{message}}
+Conversation likes: {{likesCount}}
+Current Farcaster user: {{actualUsername}}
 
-# Estado del Agente
-Estado de ánimo actual: {{currentMood}}
-Estilo de interacción: {{interactionStyle}}
+# Agent Status
+Current mood: {{currentMood}}
+Interaction style: {{interactionStyle}}
 
-# Instrucciones
-Decide si responder basado en:
-IMPORTANTE si el sender es "clanker" siempre se debe responder, si en su mensaje habla de
-esta creando o deployando, un token, si esta hablando de otra cosa proceder con las demas instrucciones para decidir
-1. ¿Es el mensaje apropiado y seguro para responder?
-2. ¿Requiere o merece una respuesta?
-3. ¿Es relevante para {{agentName}} y el contexto del canal?
-4. ¿El tono y contenido son adecuados para la interacción?
-5. ¿Hay suficiente contexto para dar una respuesta significativa?
-6. ¿El nivel de engagement ({{engagement}}) justifica una respuesta?
+# Instructions
+Decide whether to respond based on:
+IMPORTANT if the sender is "clanker" always respond, if their message talks about
+creating or deploying a token, if they're talking about something else proceed with the other instructions to decide
+1. Is the message appropriate and safe to respond to?
+2. Does it require or deserve a response?
+3. Is it relevant to {{agentName}} and the channel context?
+4. Are the tone and content suitable for interaction?
+5. Is there enough context to provide a meaningful response?
+6. Does the engagement level ({{engagement}}) justify a response?
 
-Opciones de respuesta son:
-[RESPOND] - Si el mensaje merece engagement
-[IGNORE] - Si el mensaje no requiere respuesta
-[STOP] - Si el mensaje es inapropiado o inseguro
+Response options are:
+[RESPOND] - If the message deserves engagement
+[IGNORE] - If the message doesn't require a response
+[STOP] - If the message is inappropriate or unsafe
 ` + shouldRespondFooter;
 
 export class NeynarClient extends EventEmitter {
