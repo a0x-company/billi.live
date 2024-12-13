@@ -40,9 +40,7 @@ export function LiveChannels() {
           <div
             key={livestream.livepeerInfo.streamId}
             className="flex-none w-80 cursor-pointer"
-            onClick={() =>
-              router.push(`/token/0x33a2c4a426a4e866def7996ffa93fbee6d397eb8`)
-            }
+            onClick={() => router.push(`/token/${livestream.tokenAddress}`)}
           >
             <div className="relative group transition-transform duration-300 ease-out hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20">
               <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-2 py-1 rounded">

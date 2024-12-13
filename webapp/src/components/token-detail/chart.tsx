@@ -5,6 +5,12 @@ import { memo } from "react";
 interface ChartProps {
   tokenAddress: string;
 }
+const url =
+  "https://dexscreener.com/base/tokenAddress?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartTheme=dark&theme=dark&chartStyle=0&chartType=usd&interval=15";
+
+const parseTokenAddress = (tokenAddress: string) => {
+  return url.replace("tokenAddress", tokenAddress);
+};
 
 const Chart: React.FC<ChartProps> = ({ tokenAddress }) => {
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -12,9 +18,9 @@ const Chart: React.FC<ChartProps> = ({ tokenAddress }) => {
   return (
     <iframe
       className={size}
-      id="geckoterminal-embed"
-      title="GeckoTerminal Embed"
-      src={`https://www.geckoterminal.com/es/base/pools/${tokenAddress}?embed=1&info=0&swaps=0`}
+      id="dexscreener-embed"
+      title="Dexscreener Embed"
+      src={parseTokenAddress(tokenAddress)}
       allow="clipboard-write"
       allowFullScreen
     ></iframe>

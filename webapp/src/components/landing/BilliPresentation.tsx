@@ -12,7 +12,7 @@ export function BilliPresentation() {
       try {
         const response = await fetch("/api/agent");
         const data = await response.json();
-        setAgentMessage(data[0].text);
+        setAgentMessage(data[0]?.text);
       } finally {
         setIsLoading(false);
       }

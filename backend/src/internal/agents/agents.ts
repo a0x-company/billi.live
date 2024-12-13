@@ -7,7 +7,7 @@ export class AgentService {
     try {
       // const response = await axios.post(`http://localhost:3000/${agentId}/message`, {
       const response = await axios.post(
-        `https://489e-2800-300-6272-f6b0-418c-80e1-717e-1354.ngrok-free.app/${agentId}/message`,
+        `https://7691-2800-300-6272-f6b0-58d2-d20c-c1c5-26b8.ngrok-free.app/${agentId}/message`,
         {
           text: message,
         }

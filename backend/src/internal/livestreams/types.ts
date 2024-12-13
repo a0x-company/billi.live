@@ -134,6 +134,7 @@ export type Livestream = {
   pubHash?: string;
   streamedByAgent?: boolean;
   pfpUrl?: string;
+  cast?: CastInFarcaster | null;
 };
 
 export enum ActionType {
@@ -155,5 +156,23 @@ export type PostAdditionalData = {
     text: string;
     handle: string;
     channelId?: string;
+  };
+};
+
+export type CastInFarcaster = {
+  pubHash: string;
+  author: {
+    username: string;
+    display_name: string;
+    pfp_url: string;
+  };
+  text: string;
+  timestamp: string;
+  reactions: {
+    likes_count: number;
+    recasts_count: number;
+  };
+  replies: {
+    count: number;
   };
 };

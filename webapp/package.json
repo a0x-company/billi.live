@@ -22,6 +22,7 @@
     "@walletconnect/utils": "^2.17.2",
     "axios": "^1.7.8",
     "dayjs": "^1.11.13",
+    "ethers": "^5.7.2",
     "firebase": "^11.0.2",
     "firebase-admin": "^13.0.1",
     "lightweight-charts": "^4.2.1",

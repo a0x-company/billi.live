@@ -6,6 +6,9 @@ import axios from "axios";
 
 const API_URL = process.env.API_URL;
 
+export const fetchCache = "force-no-store";
+export const dynamic = "auto";
+
 export async function GET(req: Request) {
   console.log("[GET][api/lives-landing]");
 

@@ -161,6 +161,27 @@ export function setupSocket(server: Server, firestore: Firestore) {
               console.error("Error interacting with agent:", error);
             }
           })();
+        } else {
+          (async () => {
+            const tags = ["heybilli", "billi"];
+            const hasTagAgent = tags.some((tag) => comment.includes(tag));
+            if (hasTagAgent) {
+              const agentResponse = await agentService.interactWithAgent(comment);
+              const text = agentResponse[0].text;
+
+              const newCommentByAgent = {
+                id,
+                handle: "heybilli",
+                pfp: "https://imagedelivery.net/BXluQx4ige9GuW0Ia56BHw/c25730b6-e1db-45ff-e874-f72d5dc05a00/rectcrop3",
+                comment: text,
+                timestamp,
+                parentIdentifier,
+              };
+
+              comments[streamId].push(newCommentByAgent);
+              io.to(streamId).emit("comment", newCommentByAgent);
+            }
+          })();
         }
 
         if (!comments[streamId]) {
@@ -178,7 +199,8 @@ export function setupSocket(server: Server, firestore: Firestore) {
 
           const signerUuid = await profileService.getSignerUuid(handle);
 
-          const pubHash = await liveStreamStorage.getPubHashByStreamId(streamId);
+          const tokenAddressNormalized = streamId.toLowerCase();
+          const pubHash = await liveStreamStorage.getPubHashByTokenAddress(tokenAddressNormalized);
 
           if (!pubHash || !signerUuid) {
             throw new Error("No pubHash or signerUuid found for streamId: " + streamId);
