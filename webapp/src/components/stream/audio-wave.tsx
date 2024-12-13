@@ -6,9 +6,10 @@ import * as THREE from "three";
 
 interface AudioWaveProps {
   isPlaying: boolean;
+  color?: string;
 }
 
-export const AudioWave = ({ isPlaying }: AudioWaveProps) => {
+export const AudioWave = ({ isPlaying, color = "#ff3366" }: AudioWaveProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.Camera | null>(null);
@@ -28,7 +29,7 @@ export const AudioWave = ({ isPlaying }: AudioWaveProps) => {
     const bars: THREE.Mesh[] = [];
     const barGeometry = new THREE.BoxGeometry(0.2, 1, 0.2);
     const barMaterial = new THREE.MeshPhongMaterial({
-      color: 0xff3366,
+      color: new THREE.Color(color),
       shininess: 100,
       specular: 0x444444,
     });
@@ -64,7 +65,7 @@ export const AudioWave = ({ isPlaying }: AudioWaveProps) => {
         containerRef.current.removeChild(renderer.domElement);
       }
     };
-  }, []);
+  }, [color]);
 
   useEffect(() => {
     if (
