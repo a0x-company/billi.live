@@ -282,7 +282,7 @@ export const ChatBox: React.FC<{
 
       <ul
         ref={commentsContainerRef}
-        className="flex-1 p-4 space-y-4 overflow-y-scroll scrollbar-hidden relative"
+        className="flex-1 p-4 space-y-4 overflow-y-scroll scrollbar-hidden relative max-h-[calc(100vh-200px)]"
         style={{
           maskImage: `linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 10px), transparent)`,
         }}
