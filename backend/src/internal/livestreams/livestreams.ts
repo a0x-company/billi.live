@@ -34,6 +34,7 @@ interface LivestreamManager {
   getLives(): Promise<Livestream[]>;
   getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
   addPubHashToLivestream(streamId: string, pubHash: string): Promise<Livestream | null>;
+  updateStreamedByAgent(streamId: string, isStreamedByAgent: boolean): Promise<Livestream | null>;
 }
 
 interface LivepeerManager {
@@ -118,6 +119,7 @@ export class LivestreamService {
       livepeerInfo: streamInfo,
       createdAt: new Date(),
       status: "created",
+      streamedByAgent: false,
     };
 
     return livestream;
@@ -155,6 +157,13 @@ export class LivestreamService {
 
   public async convertTextToSpeech(text: string): Promise<any> {
     return await this.playHtService.convertTextToSpeech(text);
+  }
+
+  public async updateStreamedByAgent(
+    streamId: string,
+    isStreamedByAgent: boolean
+  ): Promise<Livestream | null> {
+    return await this.livestreamStorage.updateStreamedByAgent(streamId, isStreamedByAgent);
   }
 
   /* NOT USED YET */

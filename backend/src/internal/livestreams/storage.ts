@@ -51,6 +51,7 @@ export class LivestreamStorage {
         tokenAddress,
         pfpUrl: pfpUrl || "",
         pubHash: pubHash || "",
+        streamedByAgent: false,
       });
 
       await countDocRef.update({ total: newCount });
@@ -243,5 +244,44 @@ export class LivestreamStorage {
     }
 
     return null;
+  }
+
+  public async updateStreamedByAgent(
+    streamId: string,
+    isStreamedByAgent: boolean
+  ): Promise<Livestream | null> {
+    try {
+      const querySnapshot = await this.firestore
+        .collection(this.LIVES_COLLECTION)
+        .where("tokenAddress", "==", streamId)
+        .limit(1)
+        .get();
+
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        await doc.ref.update({ streamedByAgent: isStreamedByAgent });
+
+        const updatedDoc = await doc.ref.get();
+        const data = updatedDoc.data();
+
+        if (data) {
+          return {
+            handle: data.handle,
+            title: data.title,
+            livepeerInfo: data.livepeerInfo,
+            createdAt: data.createdAt,
+            status: data.status,
+            description: data.description,
+            tokenAddress: data.tokenAddress,
+            streamedByAgent: data.streamedByAgent,
+          };
+        }
+      }
+
+      return null;
+    } catch (err: any) {
+      console.log(err instanceof Error ? err.message : "error desconocido");
+      throw new Error(err instanceof Error ? err.message : "error desconocido");
+    }
   }
 }
