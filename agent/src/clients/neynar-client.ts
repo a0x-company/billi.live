@@ -900,7 +900,7 @@ export class NeynarClient extends EventEmitter {
             "Ya se respondió en una acción, omitiendo respuesta adicional"
           );
         } else {
-          this.cleanupActionResponses(); // Solo limpiamos si vamos a verificar
+          this.cleanupActionResponses();
           await callback(response, undefined, false);
           elizaLogger.success("Respuesta publicada exitosamente");
         }

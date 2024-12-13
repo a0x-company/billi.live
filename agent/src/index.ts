@@ -22,7 +22,6 @@ import {
   IDatabaseAdapter,
   validateCharacterConfig,
 } from "@ai16z/eliza";
-import { bootstrapPlugin } from "@ai16z/plugin-bootstrap";
 import Database from "better-sqlite3";
 import fs from "fs";
 import readline from "readline";
@@ -33,9 +32,8 @@ import { character } from "./character.ts";
 import type { DirectClient } from "@ai16z/client-direct";
 import timeProvider from "./providers/timeProvider.ts";
 import evmPlugin from "./plugin-evm/src/index.ts";
-import { livestreamGeneration } from "./custom_actions/livestream.ts";
+import { livestreamGeneration } from "./custom_actions/livestream/action.ts";
 import NeynarClientInterface from "./clients/neynar-client.ts";
-import { askToDeploy } from "./custom_actions/deployClanker.ts";
 import { createNodePlugin } from "@ai16z/plugin-node";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file

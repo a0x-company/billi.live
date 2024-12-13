@@ -1,5 +1,5 @@
 // react
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 // components
 import { AudioWave } from "./audio-wave";
@@ -12,6 +12,37 @@ type AgentViewerProps = {
   setIsMuted: (isMuted: boolean) => void;
 };
 
+type PlaylistItem = {
+  src: string;
+  title: string;
+};
+
+type HandleTheme = {
+  primary: string;
+  wave: string;
+};
+
+const HANDLE_THEMES: Record<string, HandleTheme> = {
+  billi: {
+    primary: "text-purple-500",
+    wave: "#A855F7", // purple-500 en hex
+  },
+  tsukasachan: {
+    primary: "text-yellow-500",
+    wave: "#EAB308", // yellow-500 en hex
+  },
+  default: {
+    primary: "text-rose-500",
+    wave: "#F43F5E", // rose-500 en hex
+  },
+};
+
+const PLAYLISTS_BY_HANDLE: Record<string, PlaylistItem[]> = {
+  billi: [{ src: "/assets/music/lofi.mp3", title: "Lofi Beats" }],
+  tsukasachan: [{ src: "/assets/music/anime.mp3", title: "Anime Beats" }],
+  default: [{ src: "/assets/music/lofi.mp3", title: "Default Lofi" }],
+};
+
 export const AgentViewer = ({
   handle,
   currentText,
@@ -20,8 +51,16 @@ export const AgentViewer = ({
 }: AgentViewerProps) => {
   const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
 
+  const playlist =
+    PLAYLISTS_BY_HANDLE[handle.toLowerCase()] || PLAYLISTS_BY_HANDLE.default;
+  const currentTrack = playlist[0];
+
+  // Obtener el tema del handle
+  const theme = HANDLE_THEMES[handle.toLowerCase()] || HANDLE_THEMES.default;
+
   useEffect(() => {
     if (backgroundMusicRef.current) {
+      backgroundMusicRef.current.src = currentTrack.src;
       backgroundMusicRef.current.volume = 0.1;
       backgroundMusicRef.current.loop = true;
 
@@ -31,7 +70,7 @@ export const AgentViewer = ({
         backgroundMusicRef.current.pause();
       }
     }
-  }, [isMuted]);
+  }, [isMuted, currentTrack]);
 
   return (
     <div className="w-full h-full flex items-center justify-center text-white relative">
@@ -51,7 +90,7 @@ export const AgentViewer = ({
       <div className="relative z-20 w-full h-full">
         <audio
           ref={backgroundMusicRef}
-          src="/assets/music/lofi.mp3"
+          src={currentTrack.src}
           className="hidden"
         />
 
@@ -64,15 +103,15 @@ export const AgentViewer = ({
         </div>
 
         <div className="absolute top-3 right-3 bg-red-600 text-white text-xs px-2 py-1 rounded">
-          <p className="font-black select-none">LIVE</p>
+          <p className="font-black">LIVE</p>
         </div>
 
         <div className="flex flex-col items-center h-full justify-center">
-          <p className="text-white text-xl md:text-[40px] font-black select-none">
-            <span className="text-rose-500">@{handle}</span> is streaming
+          <p className="text-white text-xl md:text-[40px] font-black">
+            <span className={theme.primary}>@{handle}</span> is streaming
           </p>
 
-          <AudioWave isPlaying={!!currentText} />
+          <AudioWave isPlaying={!!currentText} color={theme.wave} />
         </div>
 
         {currentText && (
