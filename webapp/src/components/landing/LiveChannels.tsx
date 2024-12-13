@@ -35,11 +35,11 @@ export function LiveChannels() {
         Live channels I think you&apos;ll like
       </h2>
 
-      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+      <div className="flex max-md:flex-col gap-4 overflow-x-auto pb-4 scrollbar-hide">
         {livestreams?.map((livestream) => (
           <div
             key={livestream.livepeerInfo.streamId}
-            className="flex-none w-80 cursor-pointer"
+            className="flex-none w-full md:w-80 cursor-pointer"
             onClick={() => router.push(`/token/${livestream.tokenAddress}`)}
           >
             <div className="relative group transition-transform duration-300 ease-out hover:scale-105 hover:shadow-xl hover:shadow-purple-500/20">

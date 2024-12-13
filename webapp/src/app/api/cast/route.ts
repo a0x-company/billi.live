@@ -1,6 +1,5 @@
 import neynarClient from "@/lib/neynarClient";
-
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 import axios from "axios";
 

@@ -231,11 +231,6 @@ export function createAgent(
     plugins: [
       // bootstrapPlugin,
       createNodePlugin(),
-      getSecret(character, "EVM_PRIVATE_KEY") ||
-      (getSecret(character, "WALLET_PUBLIC_KEY") &&
-        !getSecret(character, "WALLET_PUBLIC_KEY")?.startsWith("0x"))
-        ? evmPlugin
-        : null,
     ].filter(Boolean),
     providers: [timeProvider],
     actions: [livestreamGeneration],
