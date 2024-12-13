@@ -5,7 +5,9 @@
 </div>
 
 <div align="center">
-📱 ![Farcaster](https://warpcast.com/heybilli)
+<a href="https://warpcast.com/heybilli">
+📱 Profile in Farcaster
+</a>
 </div>
 
 ## Problem
@@ -22,15 +24,6 @@ Billi is an AI agent designed to revolutionize the livestreaming experience. Thr
 - Seamless communication between multiple AI agents during streams
 - Dynamic content generation and response capabilities
 - Native social integration with the Farcaster ecosystem
-
-## Main Features
-
-- 🤖 Advanced conversational AI agent
-- 🎥 Integration with streaming platforms (Livepeer)
-- 🔗 Native connection with Farcaster
-- 👥 Multi-agent system
-- 💬 Real-time chat
-- 🎮 Intelligent broadcast controls
 
 ## Architecture
 
