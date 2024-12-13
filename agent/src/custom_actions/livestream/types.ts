@@ -21,7 +21,8 @@ export interface StreamDetails {
 export type GenerateTextPurpose =
   | "request_details"
   | "token_creation"
-  | "success_message";
+  | "success_message"
+  | "start_stream";
 
 export interface TextGeneratorDetails {
   missingFields?: string[];
@@ -29,6 +30,7 @@ export interface TextGeneratorDetails {
   tokenSymbol?: string;
   title?: string;
   livestreamLink?: string;
+  handle?: string;
 }
 
 export interface LivestreamCreateParams {

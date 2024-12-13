@@ -58,20 +58,46 @@ export class TextGenerator {
         - Maximum 320 characters
       `,
       success_message: `
-        ${this.getPersonalityContext()}
-        
-        TASK: Announce successful livestream creation
-        Details:
-        - Link: ${details?.livestreamLink}
-        - Title: ${details?.title}
-        - Token: ${details?.tokenSymbol}
-        
-        CRITICAL:
-        - Continue the conversation flow naturally
-        - Keep it casual and confident
-        - Include the livestream link
-        - Maximum 320 characters
-      `,
+      ${this.getPersonalityContext()}
+      
+      TASK: Announce successful livestream creation and streaming instructions
+      Details:
+      - Link: ${details?.livestreamLink}
+      - Title: ${details?.title}
+      - Token: ${details?.tokenSymbol}
+      
+      CRITICAL:
+      - Continue the conversation flow naturally
+      - Keep it casual and confident
+      - Include the livestream link
+      - Mention that they can tell you "start streaming" when ready to begin
+      - Maximum 320 characters
+      
+      Example flows:
+      "Stream is set up at [link]. Let me know 'start streaming' when you're ready to go live!"
+      "Everything's ready at [link]. Just say 'start streaming' and we'll kick this off!"
+    `,
+      start_stream: `
+    ${this.getPersonalityContext()}
+    
+    TASK: Confirm stream start and guide user
+    Details:
+    - Link: ${details?.livestreamLink}
+    - User: @${details?.handle}
+    
+    CRITICAL:
+    - Tag the user with @${details?.handle}
+    - Confirm stream is starting
+    - Keep it casual and confident
+    - Include the livestream link
+    - Maximum 320 characters
+    - Subtly indicate they should write in this thread what they want to say in their stream
+    
+    Example flows:
+    "@handle your stream is live at [link]. Drop your words here and they'll reach your audience!"
+    "@handle showtime at [link]! This thread is your stage - what's your opening line?"
+    "@handle we're rolling at [link]. Everything you say here goes straight to your stream. Make it count!"
+  `,
     };
 
     return templates[purpose];

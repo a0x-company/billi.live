@@ -24,6 +24,51 @@ export class LivestreamService {
     }
   }
 
+  async updateStreamedByAgent(streamId: string, isStreamedByAgent: boolean) {
+    try {
+      const response = await fetch(
+        `${this.apiUrl}/livestreams/streamed-by-agent`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            streamId,
+            isStreamedByAgent,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      elizaLogger.log("Response:", response);
+      return response.json();
+    } catch (error) {
+      elizaLogger.error("Error updating streamedByAgent:", error);
+      return null;
+    }
+  }
+  async getLivestreamByTokenAddress(
+    tokenAddress: string
+  ): Promise<{ handle?: string; castHash?: string } | null> {
+    try {
+      const response = await fetch(
+        `${this.apiUrl}/livestreams/livestream-by-token-address?tokenAddress=${tokenAddress}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      return {
+        handle: data.handle,
+        castHash: data.pubHash,
+      };
+    } catch (error) {
+      elizaLogger.error("Error getting livestream by token address:", error);
+      return null;
+    }
+  }
   getMissingFields(details: StreamDetails): string[] {
     const missingFields = [];
     if (!details.title) missingFields.push("título");
