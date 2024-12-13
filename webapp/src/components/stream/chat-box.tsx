@@ -84,14 +84,15 @@ export const ChatBox: React.FC<{
       comment: newMessage.trim(),
       timestamp: new Date().toISOString(),
     };
-    console.log("message", message);
     const normalizedAddress = address.toString().toLowerCase();
     if (socketRef.current) {
+      console.log("socketRef.current", socketRef.current);
       socketRef.current.emit("newComment", {
         streamId: normalizedAddress,
         isAgent: isStreamedByAgent,
         ...message,
       });
+      console.log("message sent");
     }
     setNewMessage("");
   };
@@ -230,10 +231,9 @@ export const ChatBox: React.FC<{
         </div>
       )}
 
-      {/* SHOW CAST ABSOLUTE FLOATING */}
       {cast && (
         <Link
-          href={`https://warpcast.com/${cast.author.username}/${cast.pubHash}`}
+          href={`https://warpcast.com/${cast.author.username}/${cast.hash}`}
           target="_blank"
           className="flex flex-col items-start justify-center h-min bg-black/50 backdrop-blur-sm rounded-xl p-4 mx-4 mt-4 mb-4 cursor-pointer hover:bg-black/70 transition-colors duration-300 line-clamp-1"
         >
@@ -243,7 +243,7 @@ export const ChatBox: React.FC<{
               alt={cast.author.username}
               width={48}
               height={48}
-              className="rounded-full"
+              className="rounded-full object-cover aspect-square w-12 h-12"
             />
             <div className="flex items-center gap-2 leading-none pt-2">
               <p className="text-white font-bold">{cast.author.username}</p>
@@ -281,12 +281,10 @@ export const ChatBox: React.FC<{
                 target="_blank"
                 className="flex items-center gap-2"
               >
-                <Image
+                <img
                   src={msg.pfp || "/assets/stream/billi-pfp.png"}
                   alt={msg.handle}
-                  width={24}
-                  height={24}
-                  className="rounded-full"
+                  className="rounded-full object-cover aspect-square w-8 h-8"
                 />
                 <span className="font-semibold text-sm text-white">
                   {msg.handle}

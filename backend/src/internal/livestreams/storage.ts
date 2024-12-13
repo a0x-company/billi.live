@@ -52,7 +52,7 @@ export class LivestreamStorage {
         tokenAddress,
         pfpUrl: pfpUrl || "",
         pubHash: pubHash || "",
-        cast: castInFarcaster || null,
+        castInFarcaster: castInFarcaster || null,
       });
 
       await countDocRef.update({ total: newCount });
@@ -118,7 +118,6 @@ export class LivestreamStorage {
         return {
           handle: data.handle,
           title: data.title,
-          description: data.description,
           livepeerInfo: data.livepeerInfo,
           createdAt: data.createdAt,
           castInFarcaster: data.castInFarcaster,
@@ -146,7 +145,6 @@ export class LivestreamStorage {
         return {
           handle: data.handle,
           title: data.title,
-          description: data.description,
           livepeerInfo: data.livepeerInfo,
           createdAt: data.createdAt,
           castInFarcaster: data.castInFarcaster,
@@ -179,7 +177,6 @@ export class LivestreamStorage {
         return {
           handle: data.handle,
           tokenAddress: data.tokenAddress,
-          description: data.description,
           title: data.title,
           livepeerInfo: data.livepeerInfo,
           createdAt: data.createdAt,
@@ -187,6 +184,7 @@ export class LivestreamStorage {
           streamedByAgent: data.streamedByAgent,
           cast: data.cast,
           pfpUrl: data.pfpUrl,
+          pubHash: data.pubHash,
         };
       }
 

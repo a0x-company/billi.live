@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import express from "express";
+import express, { Request, Response } from "express";
 import ngrok from "ngrok";
 import {
   elizaLogger,
@@ -310,7 +310,8 @@ export class NeynarClient extends EventEmitter {
   }
 
   private setupWebhookEndpoint() {
-    this.app.post("/webhook/mentions", async (req, res) => {
+    //@ts-ignore
+    this.app.post("/webhook/mentions", async (req: Request, res: Response) => {
       try {
         const payload = req.body as WebhookPayload;
 

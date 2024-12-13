@@ -68,7 +68,7 @@ export const AgentViewer = ({
         </div>
 
         <div className="flex flex-col items-center h-full justify-center">
-          <p className="text-white text-[40px] font-black select-none">
+          <p className="text-white text-xl md:text-[40px] font-black select-none">
             <span className="text-rose-500">@{handle}</span> is streaming
           </p>
 

@@ -8,7 +8,7 @@ import {
   ModelClass,
   State,
 } from "@ai16z/eliza";
-import { getCastByHash } from "../clients/utils";
+import { getCastByHash } from "../clients/utils.ts";
 
 interface MessageMetadata {
   castHash?: string;
