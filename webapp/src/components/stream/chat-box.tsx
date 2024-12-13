@@ -233,7 +233,7 @@ export const ChatBox: React.FC<{
 
       {cast && (
         <Link
-          href={`https://warpcast.com/${cast.author.username}/${cast.hash}`}
+          href={`https://warpcast.com/${cast.author.username}/${cast.pubHash}`}
           target="_blank"
           className="flex flex-col items-start justify-center bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-2xl p-5 mx-4 mt-4 mb-4 hover:from-gray-800 hover:to-gray-900 transition-all duration-300 border border-gray-700/50 shadow-lg hover:shadow-purple-500/10"
         >
@@ -261,7 +261,7 @@ export const ChatBox: React.FC<{
           </div>
 
           {/* Contenido del cast */}
-          <p className="text-gray-100 pt-3 pb-2 text-[15px] leading-relaxed">
+          <p className="text-gray-100 pt-3 pb-2 text-[15px] leading-relaxed line-clamp-1">
             {cast.text}
           </p>
 
@@ -282,7 +282,7 @@ export const ChatBox: React.FC<{
 
       <ul
         ref={commentsContainerRef}
-        className="flex-1 p-4 space-y-4 overflow-y-scroll scrollbar-hidden relative"
+        className="flex-1 p-4 space-y-4 overflow-y-scroll scrollbar-hidden relative max-h-[calc(100vh-200px)]"
         style={{
           maskImage: `linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 10px), transparent)`,
         }}
