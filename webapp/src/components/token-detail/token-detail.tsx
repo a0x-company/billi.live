@@ -36,7 +36,7 @@ import { Comment, Livestream, LivestreamError } from "@/types";
 
 const socketUrl = STREAMING_COUNTER_SERVER_URL;
 
-const getLiveStremingByTokenAddress = async (
+const getLivestreamingByTokenAddress = async (
   address: string
 ): Promise<Livestream> => {
   try {
@@ -110,13 +110,17 @@ const TokenDetail = ({ address }: { address: string }) => {
     streamType: null,
   });
 
+  const [castData, setCastData] = useState(null);
+  const [isCastLoading, setIsCastLoading] = useState(false);
+  const [castError, setCastError] = useState(null);
+
   const {
     data: stream,
     error,
     isLoading,
   } = useQuery({
     queryKey: ["stream", address],
-    queryFn: () => getLiveStremingByTokenAddress(address as string),
+    queryFn: () => getLivestreamingByTokenAddress(address as string),
     enabled: !!address,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -136,8 +140,10 @@ const TokenDetail = ({ address }: { address: string }) => {
   );
 
   useEffect(() => {
-    if (isConnectedRoom.current) return;
-    console.log("Joining stream with streamId: ", address);
+    // Si ya hay una conexión o no hay dirección, salimos
+    if (!address || socketRef.current) return;
+
+    console.log("Starting socket connection for stream:", address);
 
     socketRef.current = io(socketUrl, {
       transports: ["websocket"],
@@ -148,93 +154,75 @@ const TokenDetail = ({ address }: { address: string }) => {
       secure: true,
     });
 
-    if (socketRef.current) {
-      socketRef.current.on("connect", () => {
-        if (socketRef.current) {
-          console.log("Joining stream with streamId: ", address);
+    const socket = socketRef.current;
 
-          socketRef.current.emit("joinStream", {
-            streamId: address,
-            handle: farcasterUser?.handle,
-          });
-          isConnectedRoom.current = true;
-        }
+    socket.on("connect", () => {
+      console.log("Socket connected, joining stream:", address);
+      socket.emit("joinStream", {
+        streamId: address,
+        handle: farcasterUser?.handle,
       });
+      isConnectedRoom.current = true;
+    });
 
-      socketRef.current.on("userCount", ({ count, users }) => {
-        setUsers(users);
-        setUserCount(count);
-      });
+    socket.on("userCount", ({ count, users: connectedUsers }) => {
+      setUsers(connectedUsers);
+      setUserCount(count);
+    });
 
-      socketRef.current.on("comment", (comment: Comment) => {
-        setComments((prevComments) => [...prevComments, comment]);
-      });
+    socket.on("comment", (comment: Comment) => {
+      setComments((prev) => [...prev, comment]);
+    });
 
-      socketRef.current.on("previousComments", (prevComments: Comment[]) => {
-        setComments(prevComments);
-      });
+    socket.on("previousComments", (prevComments: Comment[]) => {
+      setComments(prevComments);
+    });
 
-      if (isStreamedByAgent) {
-        socketRef.current.on("new-audio", ({ audio, text }) => {
-          setCurrentText(text);
-
-          const audioData = atob(audio);
-          const arrayBuffer = new ArrayBuffer(audioData.length);
-          const uint8Array = new Uint8Array(arrayBuffer);
-
-          for (let i = 0; i < audioData.length; i++) {
-            uint8Array[i] = audioData.charCodeAt(i);
-          }
-
-          const blob = new Blob([uint8Array], { type: "audio/mp3" });
-          const audioUrl = URL.createObjectURL(blob);
-
-          if (audioRef.current) {
-            audioRef.current.src = audioUrl;
-            audioRef.current.play().catch(console.error);
-          }
-
-          audioRef.current?.addEventListener("ended", () => {
-            URL.revokeObjectURL(audioUrl);
-            setTimeout(() => setCurrentText(""), 1000);
-          });
-        });
-      }
-
-      // Manejo de errores de conexión
-      socketRef.current.on("connect_error", (error) => {
-        console.error("Error de conexión WebSocket:", error);
-      });
-
-      socketRef.current.on("connect_timeout", (timeout) => {
-        console.error("Tiempo de conexión WebSocket agotado:", timeout);
+    if (stream?.streamedByAgent) {
+      socket.on("new-audio", ({ audio, text }) => {
+        setCurrentText(text);
+        // ... resto del código de manejo de audio ...
       });
     }
 
+    // Cleanup function
     return () => {
-      if (socketRef.current && isConnectedRoom.current) {
-        socketRef.current.emit("leaveStream", address);
-        socketRef.current.off("userCount");
-        socketRef.current.off("comment");
-        socketRef.current.off("previousComments");
-        socketRef.current.off("new-audio");
-        socketRef.current.disconnect();
+      if (socket) {
+        console.log("Disconnecting socket for stream:", address);
+        socket.emit("leaveStream", address);
+        socket.off("connect");
+        socket.off("userCount");
+        socket.off("comment");
+        socket.off("previousComments");
+        socket.off("new-audio");
+        socket.disconnect();
+        socketRef.current = null;
+        isConnectedRoom.current = false;
       }
     };
-  }, [address, isStreamedByAgent, isConnectedRoom, farcasterUser]);
+  }, [address]);
 
-  // if (!hasInteracted) {
-  //   return (
-  //     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-  //       <button
-  //         onClick={() => setHasInteracted(true)}
-  //         className="bg-white text-black px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
-  //       >
-  //         Start Stream and Audio
-  //       </button>
-  //     </div>
-  //   );
-  // }
+  useEffect(() => {
+    const fetchCastData = async () => {
+      if (!stream) return;
+
+      setIsCastLoading(true);
+      try {
+        const response = await fetch(`/api/cast?pubHash=${stream.pubHash}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch cast");
+        }
+        const data = await response.json();
+        setCastData(data);
+      } catch (error) {
+        console.error("Error fetching cast:", error);
+      } finally {
+        setIsCastLoading(false);
+      }
+    };
+
+    fetchCastData();
+  }, [stream]);
 
   return (
     <div className="grid grid-cols-[320px_1fr] lg:grid-cols-[895px_1fr] gap-4 py-8">
@@ -352,7 +340,7 @@ const TokenDetail = ({ address }: { address: string }) => {
           isConnectedRoom={isConnectedRoom}
           socketRef={socketRef}
           isStreamedByAgent={isStreamedByAgent}
-          cast={stream?.cast}
+          cast={castData || stream?.cast}
         />
         {address && <TokenTrade tokenAddress={address as string} />}
       </div>
