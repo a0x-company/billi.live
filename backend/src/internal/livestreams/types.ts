@@ -131,10 +131,11 @@ export type Livestream = {
   handle?: string;
   castInFarcaster?: boolean;
   description?: string;
-  pubHash?: string;
   streamedByAgent?: boolean;
   pfpUrl?: string;
   cast?: CastInFarcaster | null;
+  pubHash?: string;
+  threadHash?: string;
 };
 
 export enum ActionType {

@@ -9,10 +9,11 @@ import { getLastLivestreamForHandleHandler } from "./get-last-livestream-for-han
 import { getLivesForLandingHandler } from "./get-lives-for-landing-handler";
 import { getLivestreamByTokenAddressHandler } from "./get-livestream-for-token-address-handler";
 import { convertTextToSpeechHandler } from "./convert-text-to-speech-handler";
+import { updateStreamedByAgentHandler } from "./update-livestream-by-agent";
+import { responseToCastInFarcasterHandler } from "./response-to-cast-in-farcaster-handler";
 
 // types
 import { Livestream } from "@internal/livestreams/types";
-import { updateStreamedByAgentHandler } from "./update-livestream-by-agent";
 
 export type Context = {
   livestreamService: LivestreamManager;
@@ -31,7 +32,7 @@ interface LivestreamManager {
   getLastLivestreamForHandle(handle: string): Promise<Livestream | null>;
   getLivesForLanding(): Promise<Livestream[]>;
   getLivestreamByTokenAddress(tokenAddress: string): Promise<Livestream | null>;
-  convertTextToSpeech(text: string): Promise<any>;
+  convertTextToSpeech(text: string, agentHandle: string): Promise<any>;
   publishLivestream(livestream: Livestream): Promise<string | void>;
   talkToAgent(message: string): Promise<string>;
   updateStreamedByAgent(streamId: string, isStreamedByAgent: boolean): Promise<Livestream | null>;
@@ -57,4 +58,7 @@ export function livestreamsRoutes(router: Express, ctx: Context) {
 
   livestreamsRouter.post("/streamed-by-agent", updateStreamedByAgentHandler(ctx));
   router.use("/livestreams", livestreamsRouter);
+
+  // use
+  livestreamsRouter.post("/response-to-cast-in-farcaster", responseToCastInFarcasterHandler(ctx));
 }
