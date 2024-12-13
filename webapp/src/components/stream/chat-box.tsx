@@ -33,6 +33,58 @@ import { Comment, Cast } from "@/types";
 // socket
 import { Socket } from "socket.io-client";
 
+const commentsMock = [
+  {
+    id: "1",
+    handle: "billi",
+    pfp: "/assets/stream/billi-pfp.png",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "2",
+    handle: "billi",
+    pfp: "/assets/stream/billi-pfp.png",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "3",
+    handle: "billi",
+    pfp: "/assets/stream/billi-pfp.png",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "4",
+    handle: "billi",
+    pfp: "/assets/stream/billi-pfp.png",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "5",
+    handle: "billi",
+    pfp: "/assets/stream/billi-pfp.png",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "6",
+    handle: "billi",
+    pfp: "/assets/stream/billi-pfp.png",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+  {
+    id: "7",
+    handle: "billi",
+    pfp: "/assets/stream/billi-pfp.png",
+    comment: "Hello, how are you?",
+    timestamp: new Date().toISOString(),
+  },
+];
+
 // TODO: change this to version with websocket
 export const ChatBox: React.FC<{
   comments: Comment[];
@@ -282,12 +334,12 @@ export const ChatBox: React.FC<{
 
       <ul
         ref={commentsContainerRef}
-        className="flex-1 p-4 space-y-4 overflow-y-scroll scrollbar-hidden relative max-h-[calc(100vh-200px)]"
+        className="flex-1 p-4 space-y-4 overflow-y-scroll scrollbar-hidden relative max-h-[300px]"
         style={{
           maskImage: `linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 10px), transparent)`,
         }}
       >
-        {comments.map((msg) => (
+        {commentsMock.map((msg) => (
           <li key={msg.id} className="flex flex-col">
             <div className="flex items-center gap-2">
               <Link
