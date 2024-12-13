@@ -22,6 +22,13 @@ interface NeynarConfig {
   fid: number;
 }
 
+interface WebhookCache {
+  hash: string;
+  author: string;
+  text: string;
+  timestamp: number;
+}
+
 interface WebhookPayload {
   created_at: number;
   type: string;
@@ -58,6 +65,7 @@ interface WebhookPayload {
     };
   };
 }
+
 const messageCompletionFooter =
   '\nResponse format should be formatted in a JSON block like this:\n```json\n{ "user": "{{agentName}}", "text": string, "action": "string" }\n```\n\nIMPORTANT:\n- The text field should NEVER include the action\n- The action goes ONLY in the action field\n\nExamples:\nBAD: { "user": "{{agentName}}", "text": "going silent (MUTE_ROOM)", "action": "MUTE_ROOM" }\nBAD: { "user": "{{agentName}}", "text": "let\'s talk more about that (CONTINUE)", "action": "CONTINUE" }\nGOOD: { "user": "{{agentName}}", "text": "going silent", "action": "MUTE_ROOM" }\nGOOD: { "user": "{{agentName}}", "text": "let\'s talk more about that", "action": "CONTINUE" }';
 const farcasterMessageTemplate =
@@ -232,7 +240,10 @@ export class NeynarClient extends EventEmitter {
   private config: NeynarConfig;
   private webhookId: string | null = null;
   private webhookSecret: string | null = null;
-  private hasRespondedMention: Map<string, boolean> = new Map();
+  private hasRespondedInAction: Map<string, number> = new Map();
+  private webhookCache: WebhookCache[] = [];
+  private WEBHOOK_CACHE_TIMEOUT = 60000;
+  private ACTION_RESPONSE_TIMEOUT = 5000;
 
   constructor(runtime: any, config: NeynarConfig, port: number = 3001) {
     super();
@@ -245,6 +256,43 @@ export class NeynarClient extends EventEmitter {
     this.setupSignalHandlers();
   }
 
+  private cleanupCache() {
+    const now = Date.now();
+    this.webhookCache = this.webhookCache.filter(
+      (entry) => now - entry.timestamp < this.WEBHOOK_CACHE_TIMEOUT
+    );
+  }
+
+  private cleanupActionResponses() {
+    const now = Date.now();
+    this.hasRespondedInAction.forEach((timestamp, hash) => {
+      if (now - timestamp > this.ACTION_RESPONSE_TIMEOUT) {
+        this.hasRespondedInAction.delete(hash);
+      }
+    });
+  }
+
+  private isDuplicateWebhook(payload: WebhookPayload): boolean {
+    this.cleanupCache();
+
+    const isDuplicate = this.webhookCache.some(
+      (entry) =>
+        entry.hash === payload.data.hash &&
+        entry.author === payload.data.author.username &&
+        entry.text === payload.data.text
+    );
+
+    if (!isDuplicate) {
+      this.webhookCache.push({
+        hash: payload.data.hash,
+        author: payload.data.author.username,
+        text: payload.data.text,
+        timestamp: Date.now(),
+      });
+    }
+
+    return isDuplicate;
+  }
   private setupSignalHandlers() {
     const cleanup = async () => {
       elizaLogger.log("Limpiando antes de salir...");
@@ -266,6 +314,11 @@ export class NeynarClient extends EventEmitter {
       try {
         const payload = req.body as WebhookPayload;
 
+        if (this.isDuplicateWebhook(payload)) {
+          elizaLogger.log("⚠️ Webhook duplicado detectado, ignorando...");
+          return res.status(200).json({ status: "ignored_duplicate" });
+        }
+
         if (payload.type === "cast.created") {
           if (
             payload.data.mentioned_profiles.some(
@@ -285,6 +338,7 @@ export class NeynarClient extends EventEmitter {
       }
     });
   }
+
   private mapRepliesRecursively(cast: any) {
     console.log("\n=== PROCESANDO CAST ===");
     console.log("Autor:", cast.author.username || cast.author.display_name);
@@ -509,22 +563,32 @@ export class NeynarClient extends EventEmitter {
         context,
         modelClass: ModelClass.SMALL,
       });
-
-      const callback = async (content: any) => {
+      const callback = async (
+        content: any,
+        hash?: string,
+        fromAction: boolean = false
+      ) => {
         console.log("=== CALLBACK CONTENT ===", {
           text: content.text,
           action: content.action,
+          fromAction: fromAction,
         });
 
-        const reply = await this.replyToCast(content.text, payload.data.hash);
+        const reply = await this.replyToCast(
+          content.text,
+          hash || payload.data.hash
+        );
 
-        console.log("Reply from Farcaster:", {
+        elizaLogger.log("Reply from Farcaster:", {
           id: reply?.id,
           text: reply?.content?.text,
           roomId: reply?.roomId,
         });
-        this.hasRespondedMention.set(payload.data.hash, true);
+
         if (reply) {
+          if (fromAction) {
+            this.hasRespondedInAction.set(payload.data.hash, Date.now());
+          }
           const memory = {
             id: reply.id,
             userId: this.runtime.agentId,
@@ -533,6 +597,7 @@ export class NeynarClient extends EventEmitter {
             content: {
               text: content.text,
               action: content.action,
+              fromAction: fromAction,
             },
             createdAt: Date.now(),
           };
@@ -569,8 +634,13 @@ export class NeynarClient extends EventEmitter {
           callback
         );
 
-        if (!this.hasRespondedMention.has(payload.data.hash)) {
-          await callback(response);
+        if (this.hasRespondedInAction.has(payload.data.hash)) {
+          elizaLogger.log(
+            "Ya se respondió en una acción, omitiendo respuesta adicional"
+          );
+        } else {
+          this.cleanupActionResponses();
+          await callback(response, undefined, false);
           elizaLogger.success("Respuesta publicada exitosamente");
         }
       }
@@ -755,20 +825,29 @@ export class NeynarClient extends EventEmitter {
         modelClass: ModelClass.SMALL,
       });
 
-      const callback = async (content: any) => {
+      const callback = async (
+        content: any,
+        hash?: string,
+        fromAction: boolean = false
+      ) => {
         console.log("=== CALLBACK CONTENT ===", {
           text: content.text,
           action: content.action,
         });
 
-        const reply = await this.replyToCast(content.text, payload.data.hash);
+        const reply = await this.replyToCast(
+          content.text,
+          hash || payload.data.hash
+        );
 
+        if (fromAction) {
+          this.hasRespondedInAction.set(payload.data.hash, Date.now());
+        }
         console.log("Reply from Farcaster:", {
           id: reply?.id,
           text: reply?.content?.text,
           roomId: reply?.roomId,
         });
-        this.hasRespondedMention.set(payload.data.hash, true);
         if (reply) {
           const memory = {
             id: reply.id,
@@ -778,6 +857,7 @@ export class NeynarClient extends EventEmitter {
             content: {
               text: content.text,
               action: content.action,
+              fromAction: content.fromAction,
             },
             createdAt: Date.now(),
           };
@@ -814,8 +894,13 @@ export class NeynarClient extends EventEmitter {
           callback
         );
 
-        if (!this.hasRespondedMention.has(payload.data.hash)) {
-          await callback(response);
+        if (this.hasRespondedInAction.has(payload.data.hash)) {
+          elizaLogger.log(
+            "Ya se respondió en una acción, omitiendo respuesta adicional"
+          );
+        } else {
+          this.cleanupActionResponses();
+          await callback(response, undefined, false);
           elizaLogger.success("Respuesta publicada exitosamente");
         }
       }
