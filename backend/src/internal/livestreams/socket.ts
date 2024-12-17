@@ -133,24 +133,28 @@ export function setupSocket(server: Server, firestore: Firestore) {
         comment,
         timestamp,
         parentIdentifier = null,
-        isAgent = false,
+        hosterIsAgent = false,
       }) => {
         let time = performance.now();
+        console.log("hosterIsAgent", hosterIsAgent);
+
         /* interact with agent */
-        if (isAgent) {
+        if (hosterIsAgent) {
           (async () => {
             try {
               const agentResponse = await agentService.interactWithAgent(comment);
               const text = agentResponse[0].text;
 
-              const audioPromise = playHtService.convertTextToSpeech(text).then((buffer) => {
-                const audioBase64 = buffer.toString("base64");
-                const io = getIO();
-                io.to(streamId).emit("new-audio", {
-                  audio: audioBase64,
-                  text: text,
+              const audioPromise = playHtService
+                .convertTextToSpeech(text, "heybilli")
+                .then((buffer) => {
+                  const audioBase64 = buffer.toString("base64");
+                  const io = getIO();
+                  io.to(streamId).emit("new-audio", {
+                    audio: audioBase64,
+                    text: text,
+                  });
                 });
-              });
 
               audioPromise.catch((error) => {
                 console.error("Error converting text to speech:", error);

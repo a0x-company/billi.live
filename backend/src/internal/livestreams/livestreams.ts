@@ -44,7 +44,7 @@ interface LivepeerManager {
 }
 
 interface PlayHtManager {
-  convertTextToSpeech(text: string): Promise<any>;
+  convertTextToSpeech(text: string, agentHandle: string): Promise<any>;
 }
 interface ProfileManager {
   getSignerUuid(handle: string): Promise<string | null>;
@@ -167,8 +167,8 @@ export class LivestreamService {
     return await this.livestreamStorage.getLivestreamByTokenAddress(tokenAddress);
   }
 
-  public async convertTextToSpeech(text: string): Promise<any> {
-    return await this.playHtService.convertTextToSpeech(text);
+  public async convertTextToSpeech(text: string, agentHandle: string): Promise<any> {
+    return await this.playHtService.convertTextToSpeech(text, agentHandle);
   }
 
   public async updateStreamedByAgent(

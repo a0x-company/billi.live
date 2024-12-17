@@ -81,6 +81,16 @@ deploy: validate-app-name validate-github-username build
 		--memory 1Gi \
 		--cpu 1
 
+update-secrets: validate-app-name validate-github-username
+	@echo "[update-secrets $(APP_NAME)] updating secrets..."
+	$(eval GITHUB_USERNAME := $(shell git config user.github))
+	$(eval DEPLOY_APP_NAME := development-$(APP_NAME)-$(GITHUB_USERNAME))
+	@gcloud secrets versions add $(DEPLOY_APP_NAME) --data-file=src/cmd/$(APP_NAME)/.env || gcloud secrets create $(DEPLOY_APP_NAME) --data-file=src/cmd/$(APP_NAME)/.env
+	@gcloud run services update $(DEPLOY_APP_NAME) \
+		--region $(REGION) \
+		--update-env-vars "$$(gcloud secrets versions access latest --secret $(DEPLOY_APP_NAME) | tr '\n' ',')"
+
+
 deploy-video: validate-app-name validate-github-username build
 	@echo "[deploy-video $(APP_NAME)] deploying video processing service..."
 	$(eval GITHUB_USERNAME := $(shell git config user.github))

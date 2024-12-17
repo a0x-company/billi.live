@@ -22,16 +22,28 @@ export class PlayHtService {
     }
   }
 
-  public async convertTextToSpeech(text: string): Promise<Buffer> {
+  public async convertTextToSpeech(text: string, agentHandle: string): Promise<Buffer> {
     try {
       const fileName = `${uuidv4()}.mp3`;
       const filePath = path.join(this.tempDir, fileName);
 
-      const stream = await PlayHT.stream(text, {
-        voiceEngine: "PlayHT1.0",
-        voiceId:
-          "s3://mockingbird-prod/agent_47_carmelo_pampillonio_58e796e1-0b87-4f3e-8b36-7def6d65ce66/voices/speaker/manifest.json",
-      });
+      let stream;
+
+      if (agentHandle === "heybilli") {
+        stream = await PlayHT.stream(text, {
+          voiceEngine: "PlayHT1.0",
+          voiceId:
+            "s3://mockingbird-prod/agent_47_carmelo_pampillonio_58e796e1-0b87-4f3e-8b36-7def6d65ce66/voices/speaker/manifest.json",
+        });
+      }
+
+      if (agentHandle === "tsukasachan") {
+        stream = await PlayHT.stream(text, {
+          voiceEngine: "PlayHT2.0",
+          voiceId:
+            "s3://voice-cloning-zero-shot/f6594c50-e59b-492c-bac2-047d57f8bdd8/susanadvertisingsaad/manifest.json",
+        });
+      }
 
       // Guardar el audio y convertirlo a Buffer
       const chunks: Buffer[] = [];

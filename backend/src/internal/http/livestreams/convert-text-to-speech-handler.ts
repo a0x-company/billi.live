@@ -11,7 +11,10 @@ export const convertTextToSpeechHandler = (ctx: Context): RequestHandler => {
 
       const agentResponseText = await ctx.livestreamService.talkToAgent(text);
 
-      const audioBuffer = await ctx.livestreamService.convertTextToSpeech(agentResponseText);
+      const audioBuffer = await ctx.livestreamService.convertTextToSpeech(
+        agentResponseText,
+        "heybilli"
+      );
 
       const audioBase64 = audioBuffer.toString("base64");
       const io = getIO();

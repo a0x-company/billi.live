@@ -1028,6 +1028,7 @@ export class NeynarClient extends EventEmitter {
             this.ngrokUrl = await ngrok.connect({
               addr: this.port,
               authtoken: process.env.NGROK_AUTH_TOKEN,
+              domain: process.env.NGROK_DOMAIN,
             });
 
             await this.registerWebhook(this.ngrokUrl);

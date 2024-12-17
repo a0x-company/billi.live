@@ -123,6 +123,10 @@ export class LivestreamStorage {
           createdAt: data.createdAt,
           castInFarcaster: data.castInFarcaster,
           status: data.status,
+          streamedByAgent: data.streamedByAgent,
+          tokenAddress: data.tokenAddress,
+          pubHash: data.pubHash,
+          threadHash: data.threadHash,
         };
       }
 

@@ -30,7 +30,7 @@ export class FarcasterService {
   public async getCastInFarcasterByPubHash(pubHash: string): Promise<CastInFarcaster> {
     try {
       const response = await this.client.get(`/cast?identifier=${pubHash}&type=hash`);
-      return response.data;
+      return response.data.cast;
     } catch (error) {
       console.error(`Error getting cast in farcaster by pub hash: ${pubHash}`, error);
       throw error;
