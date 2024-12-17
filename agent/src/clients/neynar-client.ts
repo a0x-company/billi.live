@@ -13,6 +13,7 @@ import {
 } from "@ai16z/eliza";
 import { composeContext } from "@ai16z/eliza";
 import dotenv from "dotenv";
+import { parseAndCleanResponse } from "./utils.ts";
 
 dotenv.config();
 
@@ -555,12 +556,55 @@ export class NeynarClient extends EventEmitter {
           this.runtime.character.templates?.farcasterMessageHandlerTemplate ||
           farcasterMessageTemplate,
       });
-      console.log("=== CONTEXT ===", context);
-      const response = await generateMessageResponse({
-        runtime: this.runtime,
-        context,
-        modelClass: ModelClass.SMALL,
-      });
+
+      // Nuevo sistema de reintentos para la respuesta
+      let attempts = 0;
+      let parsedResponse = null;
+      let response = null;
+
+      while (attempts < 3 && !parsedResponse) {
+        const attemptContext =
+          attempts > 0
+            ? context +
+              `\n\nNOTA: Intento ${
+                attempts + 1
+              }/3. La respuesta anterior no tenía el formato JSON correcto. Asegúrate de responder con el formato:\n\`\`\`json\n{ "user": "{{agentName}}", "text": "tu mensaje", "action": "ACCIÓN_OPCIONAL , NONE si no detectas accion" }\n\`\`\``
+            : context;
+
+        elizaLogger.log(`Intento ${attempts + 1} de generar respuesta...`);
+
+        response = await generateMessageResponse({
+          runtime: this.runtime,
+          context: attemptContext,
+          modelClass: ModelClass.SMALL,
+        });
+
+        parsedResponse = await parseAndCleanResponse(
+          response?.text || "",
+          attempts
+        );
+        attempts++;
+      }
+
+      if (!parsedResponse?.text) {
+        elizaLogger.error(
+          "No se pudo generar una respuesta válida después de 3 intentos"
+        );
+        return;
+      }
+
+      const responseMemory: Memory = {
+        id: stringToUuid(parsedResponse.text),
+        userId: this.runtime.agentId,
+        agentId: this.runtime.agentId,
+        roomId: memory.roomId,
+        content: {
+          text: parsedResponse.text,
+          action: parsedResponse.action,
+        },
+        createdAt: Date.now(),
+      };
+
       const callback = async (
         content: any,
         hash?: string,
@@ -576,12 +620,6 @@ export class NeynarClient extends EventEmitter {
           content.text,
           hash || payload.data.hash
         );
-
-        elizaLogger.log("Reply from Farcaster:", {
-          id: reply?.id,
-          text: reply?.content?.text,
-          roomId: reply?.roomId,
-        });
 
         if (reply) {
           if (fromAction) {
@@ -600,50 +638,37 @@ export class NeynarClient extends EventEmitter {
             createdAt: Date.now(),
           };
 
-          console.log("New Memory Created:", {
+          elizaLogger.log("Nueva memoria creada:", {
             id: memory.id,
             text: memory.content.text,
             action: memory.content.action,
             roomId: memory.roomId,
           });
+
           await this.runtime.messageManager.createMemory(memory);
           return [memory];
         }
         return [];
       };
 
-      if (response?.text) {
-        const responseMemory: Memory = {
-          id: stringToUuid(response.text),
-          userId: this.runtime.agentId,
-          agentId: this.runtime.agentId,
-          roomId: memory.roomId,
-          content: {
-            text: response.text,
-            action: response?.action,
-          },
-          createdAt: Date.now(),
-        };
+      await this.runtime.processActions(
+        memory,
+        [responseMemory],
+        state2,
+        callback
+      );
 
-        await this.runtime.processActions(
-          memory,
-          [responseMemory],
-          state2,
-          callback
+      if (this.hasRespondedInAction.has(payload.data.hash)) {
+        elizaLogger.log(
+          "Ya se respondió en una acción, omitiendo respuesta adicional"
         );
-
-        if (this.hasRespondedInAction.has(payload.data.hash)) {
-          elizaLogger.log(
-            "Ya se respondió en una acción, omitiendo respuesta adicional"
-          );
-        } else {
-          this.cleanupActionResponses();
-          await callback(response, undefined, false);
-          elizaLogger.success("Respuesta publicada exitosamente");
-        }
+      } else {
+        this.cleanupActionResponses();
+        await callback(parsedResponse, undefined, false);
+        elizaLogger.success("Respuesta publicada exitosamente");
       }
     } catch (error) {
-      console.log("Error en handleMention:", error);
+      elizaLogger.error("Error en handleMention:", error);
       throw error;
     }
   }
@@ -817,20 +842,63 @@ export class NeynarClient extends EventEmitter {
         template: farcasterReplyMessageTemplate,
       });
 
-      const response = await generateMessageResponse({
-        runtime: this.runtime,
-        context,
-        modelClass: ModelClass.SMALL,
-      });
+      // Nuevo sistema de reintentos para la respuesta
+      let attempts = 0;
+      let parsedResponse = null;
+      let response = null;
+
+      while (attempts < 3 && !parsedResponse) {
+        const attemptContext =
+          attempts > 0
+            ? context +
+              `\n\nNOTA: Intento ${
+                attempts + 1
+              }/3. La respuesta anterior no tenía el formato JSON correcto. Asegúrate de responder con el formato:\n\`\`\`json\n{ "user": "{{agentName}}", "text": "tu mensaje", "action": "ACCIÓN_OPCIONAL" }\n\`\`\``
+            : context;
+
+        elizaLogger.log(`Intento ${attempts + 1} de generar respuesta...`);
+
+        response = await generateMessageResponse({
+          runtime: this.runtime,
+          context: attemptContext,
+          modelClass: ModelClass.SMALL,
+        });
+
+        parsedResponse = await parseAndCleanResponse(
+          response?.text || "",
+          attempts
+        );
+        attempts++;
+      }
+
+      if (!parsedResponse?.text) {
+        elizaLogger.error(
+          "No se pudo generar una respuesta válida después de 3 intentos"
+        );
+        return;
+      }
+
+      const responseMemory: Memory = {
+        id: stringToUuid(parsedResponse.text),
+        userId: this.runtime.agentId,
+        agentId: this.runtime.agentId,
+        roomId: memory.roomId,
+        content: {
+          text: parsedResponse.text,
+          action: parsedResponse.action,
+        },
+        createdAt: Date.now(),
+      };
 
       const callback = async (
         content: any,
         hash?: string,
         fromAction: boolean = false
       ) => {
-        console.log("=== CALLBACK CONTENT ===", {
+        elizaLogger.log("=== CALLBACK CONTENT ===", {
           text: content.text,
           action: content.action,
+          fromAction: fromAction,
         });
 
         const reply = await this.replyToCast(
@@ -838,15 +906,10 @@ export class NeynarClient extends EventEmitter {
           hash || payload.data.hash
         );
 
-        if (fromAction) {
-          this.hasRespondedInAction.set(payload.data.hash, Date.now());
-        }
-        console.log("Reply from Farcaster:", {
-          id: reply?.id,
-          text: reply?.content?.text,
-          roomId: reply?.roomId,
-        });
         if (reply) {
+          if (fromAction) {
+            this.hasRespondedInAction.set(payload.data.hash, Date.now());
+          }
           const memory = {
             id: reply.id,
             userId: this.runtime.agentId,
@@ -855,52 +918,39 @@ export class NeynarClient extends EventEmitter {
             content: {
               text: content.text,
               action: content.action,
-              fromAction: content.fromAction,
+              fromAction: fromAction,
             },
             createdAt: Date.now(),
           };
 
-          console.log("New Memory Created:", {
+          elizaLogger.log("Nueva memoria creada:", {
             id: memory.id,
             text: memory.content.text,
             action: memory.content.action,
             roomId: memory.roomId,
           });
+
           await this.runtime.messageManager.createMemory(memory);
           return [memory];
         }
         return [];
       };
 
-      if (response?.text) {
-        const responseMemory: Memory = {
-          id: stringToUuid(response.text),
-          userId: this.runtime.agentId,
-          agentId: this.runtime.agentId,
-          roomId: memory.roomId,
-          content: {
-            text: response.text,
-            action: response?.action,
-          },
-          createdAt: Date.now(),
-        };
+      await this.runtime.processActions(
+        memory,
+        [responseMemory],
+        state2,
+        callback
+      );
 
-        await this.runtime.processActions(
-          memory,
-          [responseMemory],
-          state2,
-          callback
+      if (this.hasRespondedInAction.has(payload.data.hash)) {
+        elizaLogger.log(
+          "Ya se respondió en una acción, omitiendo respuesta adicional"
         );
-
-        if (this.hasRespondedInAction.has(payload.data.hash)) {
-          elizaLogger.log(
-            "Ya se respondió en una acción, omitiendo respuesta adicional"
-          );
-        } else {
-          this.cleanupActionResponses();
-          await callback(response, undefined, false);
-          elizaLogger.success("Respuesta publicada exitosamente");
-        }
+      } else {
+        this.cleanupActionResponses();
+        await callback(parsedResponse, undefined, false);
+        elizaLogger.success("Respuesta publicada exitosamente");
       }
     } catch (error) {
       elizaLogger.error("Error en handleReply:", error);

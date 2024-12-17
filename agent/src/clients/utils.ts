@@ -116,3 +116,51 @@ export async function getCastByHash(
     throw error;
   }
 }
+
+export async function parseAndCleanResponse(
+  responseText: string,
+  attempts: number = 0
+): Promise<{ text: string; action?: string; user: string }> {
+  try {
+    // Primero intentamos encontrar un bloque JSON
+    const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[1]);
+
+      // Si hay una acción en el texto, la movemos al campo action
+      const actionInText = parsed.text.match(/\(([\w_]+)\)/);
+      if (actionInText && !parsed.action) {
+        parsed.text = parsed.text.replace(/\([\w_]+\)/, "").trim();
+        parsed.action = actionInText[1];
+      }
+
+      return parsed;
+    }
+
+    // Si no hay JSON, buscamos una acción en el texto
+    const actionMatch = responseText.match(/\(([\w_]+)\)/);
+    if (actionMatch) {
+      const cleanText = responseText.replace(/\([\w_]+\)/, "").trim();
+      return {
+        user: "{{agentName}}",
+        text: cleanText,
+        action: actionMatch[1],
+      };
+    }
+
+    // Si no hay formato especial, devolvemos el texto limpio
+    return {
+      user: "{{agentName}}",
+      text: responseText.trim(),
+    };
+  } catch (error) {
+    if (attempts >= 3) {
+      return {
+        user: "{{agentName}}",
+        text: "Lo siento, estoy teniendo problemas para procesar la respuesta, puedes indicarme de nuevo lo que necesitas?",
+        action: "NONE",
+      };
+    }
+    return null;
+  }
+}
