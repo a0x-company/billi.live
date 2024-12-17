@@ -56,12 +56,12 @@ const getLivestreamingByTokenAddress = async (
 
 const getCastByHash = async (hash: string): Promise<Cast> => {
   try {
-    const response = await fetch(`/api/cast?hash=${hash}`);
+    const response = await fetch(`/api/cast?pubHash=${hash}`);
     if (!response.ok) {
       throw new Error("Cast not found");
     }
     const data = await response.json();
-    return data.cast;
+    return data;
   } catch (error) {
     console.error("Error fetching cast:", error);
     throw new Error(CastError.UNKNOWN_ERROR);
@@ -83,8 +83,7 @@ const TokenDetail = ({ address }: { address: string }) => {
     streamType: null,
   });
 
-  const [castData, setCastData] = useState(null);
-  const [isCastLoading, setIsCastLoading] = useState(false);
+  const [showStreamHost, setShowStreamHost] = useState(false);
 
   const {
     data: stream,
@@ -105,8 +104,8 @@ const TokenDetail = ({ address }: { address: string }) => {
     isLoading: castIsLoading,
   } = useQuery({
     queryKey: ["cast", address],
-    queryFn: () => getCastByHash(stream?.cast?.pubHash as string),
-    enabled: !!stream?.cast?.pubHash,
+    queryFn: () => getCastByHash(stream?.pubHash as string),
+    enabled: !!stream?.pubHash,
   });
 
   const { farcasterUser } = useContext(FarcasterUserContext);
@@ -198,28 +197,6 @@ const TokenDetail = ({ address }: { address: string }) => {
     };
   }, [address]);
 
-  useEffect(() => {
-    const fetchCastData = async () => {
-      if (!stream) return;
-
-      setIsCastLoading(true);
-      try {
-        const response = await fetch(`/api/cast?pubHash=${stream.pubHash}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch cast");
-        }
-        const data = await response.json();
-        setCastData(data);
-      } catch (error) {
-        console.error("Error fetching cast:", error);
-      } finally {
-        setIsCastLoading(false);
-      }
-    };
-
-    fetchCastData();
-  }, [stream]);
-
   return (
     <div className="grid grid-cols-1 max-md:grid-rows-[auto_1fr_1fr_1fr] lg:grid-cols-[895px_1fr] gap-4 py-8 max-md:px-4">
       <audio ref={audioRef} className="hidden" />
@@ -307,16 +284,20 @@ const TokenDetail = ({ address }: { address: string }) => {
                   isMuted={isMuted}
                   setIsMuted={setIsMuted}
                 />
-              ) : isStreamer &&
-                streamHost.streamType !== "browser" &&
-                stream.status === "live" ? (
+              ) : isStreamer && !showStreamHost ? (
                 <StreamHost
                   streamHost={streamHost}
                   setStreamHost={setStreamHost}
                   stream={stream}
+                  showStreamHost={showStreamHost}
+                  setShowStreamHost={setShowStreamHost}
                 />
               ) : (
-                <StreamViewer stream={stream} />
+                <StreamViewer
+                  stream={stream}
+                  isStreamer={isStreamer}
+                  setShowStreamHost={setShowStreamHost}
+                />
               )}
             </div>
           </>
@@ -334,7 +315,7 @@ const TokenDetail = ({ address }: { address: string }) => {
           isConnectedRoom={isConnectedRoom}
           socketRef={socketRef}
           isStreamedByAgent={isStreamedByAgent}
-          cast={castData || stream?.cast}
+          cast={cast}
         />
       </div>
       <div className="col-span-1 max-md:row-start-3 flex-1 lg:col-span-1 lg:col-start-2 lg:row-start-2">

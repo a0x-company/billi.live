@@ -101,6 +101,7 @@ export const ChatBox: React.FC<{
   isStreamedByAgent,
   cast,
 }) => {
+  console.log("cast", cast);
   const farcasterContext = useContext(FarcasterUserContext);
   const { farcasterUser, setFarcasterUser, isConnected, setIsConnected } =
     farcasterContext;
@@ -263,7 +264,7 @@ export const ChatBox: React.FC<{
   }, [farcasterUser, openQrSigner]);
 
   return (
-    <div className="bg-gray-800 rounded-lg shadow-md flex flex-col h-full relative">
+    <div className="bg-gray-800 rounded-lg shadow-md flex flex-col h-full max-h-[640px] relative">
       <div className="p-4 border-b border-gray-700">
         <h3 className="font-semibold text-white">Live Chat</h3>
       </div>
@@ -287,7 +288,7 @@ export const ChatBox: React.FC<{
         <Link
           href={`https://warpcast.com/${cast.author.username}/${cast.pubHash}`}
           target="_blank"
-          className="flex flex-col items-start justify-center bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-2xl p-5 mx-4 mt-4 mb-4 hover:from-gray-800 hover:to-gray-900 transition-all duration-300 border border-gray-700/50 shadow-lg hover:shadow-purple-500/10"
+          className="group  flex flex-col items-start justify-center bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-2xl p-5 mx-4 mt-4 mb-4 hover:from-gray-800 hover:to-gray-900 transition-all duration-300 border border-gray-700/50 shadow-lg hover:shadow-purple-500/10"
         >
           {/* Header con autor */}
           <div className="flex items-start gap-3 w-full">
@@ -303,7 +304,7 @@ export const ChatBox: React.FC<{
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <p className="text-white font-bold hover:text-purple-400 transition-colors">
+              <p className="text-white font-bold group-hover:text-purple-400 transition-colors">
                 @{cast.author.username}
               </p>
               <p className="text-gray-400 text-sm">
@@ -313,9 +314,11 @@ export const ChatBox: React.FC<{
           </div>
 
           {/* Contenido del cast */}
-          <p className="text-gray-100 pt-3 pb-2 text-[15px] leading-relaxed line-clamp-1">
-            {cast.text}
-          </p>
+          <div className="w-full overflow-hidden transition-all duration-500 ease-in-out max-h-[3rem] group-hover:max-h-[1000px]">
+            <p className="text-gray-100 pt-3 pb-2 text-[15px] leading-relaxed transition-opacity duration-300 opacity-70 group-hover:opacity-100">
+              {cast.text}
+            </p>
+          </div>
 
           {/* Footer con reacciones */}
           <div className="flex items-center gap-4 pt-2 border-t border-gray-700/50 w-full">
@@ -334,7 +337,7 @@ export const ChatBox: React.FC<{
 
       <ul
         ref={commentsContainerRef}
-        className="flex-1 p-4 space-y-4 overflow-y-scroll scrollbar-hidden relative max-h-[200px]"
+        className="flex-1 p-4 space-y-4 overflow-y-scroll scrollbar-hidden relative h-full"
         style={{
           maskImage: `linear-gradient(to bottom, transparent, #000 40px, #000 calc(100% - 10px), transparent)`,
         }}
@@ -374,7 +377,7 @@ export const ChatBox: React.FC<{
         </button>
       )}
 
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 mt-auto border-t border-gray-700">
         <div className="flex gap-2">
           <input
             type="text"

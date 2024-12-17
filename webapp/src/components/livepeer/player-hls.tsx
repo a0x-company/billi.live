@@ -1,12 +1,15 @@
 import Hls from "hls.js";
 import React, { useEffect, useRef, useState } from "react";
 import MobileVideoControls from "./mobile-video-controls";
+import { ArrowLeft } from "lucide-react";
 
 interface PlayerForHlsProps {
   src: string;
   isStreaming: boolean;
   setIsStreaming: (isStreaming: boolean) => void;
   setIsLoadingStream: (isLoadingStream: boolean) => void;
+  isStreamer: boolean;
+  setShowStreamHost: (showStreamHost: boolean) => void;
 }
 
 const PlayerForHls: React.FC<PlayerForHlsProps> = ({
@@ -14,6 +17,8 @@ const PlayerForHls: React.FC<PlayerForHlsProps> = ({
   isStreaming,
   setIsStreaming,
   setIsLoadingStream,
+  isStreamer,
+  setShowStreamHost,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -117,6 +122,15 @@ const PlayerForHls: React.FC<PlayerForHlsProps> = ({
 
   return (
     <div className="relative w-full h-full flex items-center justify-center bg-black">
+      {isStreamer && (
+        <button
+          onClick={() => setShowStreamHost(false)}
+          className="absolute top-4 left-4 bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg transition-colors flex items-center gap-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Return to Config
+        </button>
+      )}
       {isStreaming ? (
         <div className="relative w-full h-full">
           <video

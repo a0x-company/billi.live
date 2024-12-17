@@ -544,6 +544,8 @@ export class NeynarClient extends EventEmitter {
         modelClass: ModelClass.SMALL,
       });
 
+      elizaLogger.log("=== SHOULD RESPOND ===", shouldRespond);
+
       if (shouldRespond !== "RESPOND") {
         elizaLogger.log("Omitiendo respuesta...");
         return;
@@ -816,6 +818,8 @@ export class NeynarClient extends EventEmitter {
         state: state2,
         template: farcasterReplyMessageTemplate,
       });
+
+      elizaLogger.log("=== CONTEXT ===", context);
 
       const response = await generateMessageResponse({
         runtime: this.runtime,
