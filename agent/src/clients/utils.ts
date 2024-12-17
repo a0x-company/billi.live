@@ -125,22 +125,70 @@ export async function parseAndCleanResponse(
     // Primero intentamos encontrar un bloque JSON
     const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[1]);
+      let parsed;
+      try {
+        parsed = JSON.parse(jsonMatch[1]);
 
-      // Si hay una acción en el texto, la movemos al campo action
-      const actionInText = parsed.text.match(/\(([\w_]+)\)/);
-      if (actionInText && !parsed.action) {
-        parsed.text = parsed.text.replace(/\([\w_]+\)/, "").trim();
-        parsed.action = actionInText[1];
+        // Validar que tenemos los campos necesarios
+        if (!parsed.text || typeof parsed.text !== "string") {
+          elizaLogger.warn("JSON inválido: falta campo 'text' o no es string");
+          return null;
+        }
+
+        // Log del estado inicial
+        elizaLogger.debug("Estado inicial:", {
+          text: parsed.text,
+          action: parsed.action,
+        });
+
+        // Buscar acción en el texto
+        const actionInText = parsed.text.match(/\(([\w_]+)\)/);
+        if (actionInText) {
+          const originalText = parsed.text;
+          parsed.text = parsed.text.replace(/\([\w_]+\)/, "").trim();
+
+          // Solo usar la acción del texto si no hay una acción válida definida
+          if (!parsed.action || parsed.action === "") {
+            parsed.action = actionInText[1];
+            elizaLogger.debug("Acción extraída del texto:", actionInText[1]);
+          } else {
+            elizaLogger.debug("Manteniendo acción existente:", parsed.action);
+          }
+
+          elizaLogger.debug("Transformación realizada:", {
+            originalText,
+            newText: parsed.text,
+            finalAction: parsed.action,
+          });
+        }
+
+        // Validación final
+        if (!parsed.text.trim()) {
+          elizaLogger.warn("Texto quedó vacío después de la limpieza");
+          return null;
+        }
+
+        return {
+          user: parsed.user || "{{agentName}}",
+          text: parsed.text,
+          action: parsed.action,
+        };
+      } catch (jsonError) {
+        elizaLogger.error("Error parseando JSON:", jsonError);
+        return null;
       }
-
-      return parsed;
     }
 
-    // Si no hay JSON, buscamos una acción en el texto
+    // Si no hay JSON, intentar extraer acción del texto plano
     const actionMatch = responseText.match(/\(([\w_]+)\)/);
     if (actionMatch) {
       const cleanText = responseText.replace(/\([\w_]+\)/, "").trim();
+      elizaLogger.debug("Extrayendo acción de texto plano:", {
+        originalText: responseText,
+        cleanText,
+        action: actionMatch[1],
+      });
+
       return {
         user: "{{agentName}}",
         text: cleanText,
@@ -148,12 +196,13 @@ export async function parseAndCleanResponse(
       };
     }
 
-    // Si no hay formato especial, devolvemos el texto limpio
+    // Texto plano sin acciones
     return {
       user: "{{agentName}}",
       text: responseText.trim(),
     };
   } catch (error) {
+    elizaLogger.error("Error en parseAndCleanResponse:", error);
     if (attempts >= 3) {
       return {
         user: "{{agentName}}",
