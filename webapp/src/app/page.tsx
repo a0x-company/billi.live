@@ -15,7 +15,7 @@ export default function Home() {
       <main className="flex-1 max-md:max-w-full">
         <section className="relative min-h-screen">
           {/* Background video with overlay */}
-          <div className="absolute inset-0 z-0">
+          {/* <div className="absolute inset-0 z-0">
             <div className="absolute inset-0 bg-black/60 z-10" />{" "}
             <video
               src="/assets/landing/static.mp4"
@@ -25,17 +25,17 @@ export default function Home() {
               playsInline
               className="w-full h-full object-cover"
             />
-          </div>
+          </div> */}
 
           {/* Main content */}
-          <div className="relative z-20 container mx-auto px-4 py-20">
+          <div className="relative z-20 container mx-auto px-4 py-20 gap-4">
             <BilliPresentation />
 
             <LiveChannels />
           </div>
 
           <div className="absolute bottom-0 left-0 right-0 z-20">
-            <footer className="bg-black/80 backdrop-blur-sm border-t border-white/10 py-4">
+            <footer className="border-t border-white/10 py-4">
               <div className="container mx-auto px-4">
                 <div className="flex items-center justify-center space-x-6">
                   {/* <div className="flex flex-row gap-[5px] max-md:w-1/3 items-center justify-center">

@@ -118,6 +118,7 @@ export const livestreamGeneration: Action = {
     const metadata = message.content.metadata as MessageMetadata;
     const sender = metadata?.author?.username;
     const castHash = metadata?.castHash;
+    const threadHash = metadata?.threadHash;
 
     const isStartStreamIntent = await generateText({
       runtime,
@@ -197,7 +198,7 @@ export const livestreamGeneration: Action = {
             title: streamDetails.title,
             description: streamDetails.description,
             pfpUrl: originalCast.cast.author.pfp_url,
-            pubHash: castHash || "",
+            pubHash: threadHash || "",
             tokenAddress: finalTokenAddress,
           });
 
