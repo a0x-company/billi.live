@@ -8,6 +8,7 @@ export interface MessageMetadata {
     url: string;
   }[];
   parentHash?: string;
+  threadHash?: string;
 }
 
 export interface StreamDetails {
