@@ -169,7 +169,6 @@ export class NeynarClient extends EventEmitter {
         agentProfile
       );
   
-      // Usamos el método del ResponseService para decidir si responder
       const shouldRespond = await this.responseService.shouldRespond(state, type);
       if (!shouldRespond) {
         elizaLogger.log(`Decidió no responder a este ${type}`);
@@ -187,21 +186,41 @@ export class NeynarClient extends EventEmitter {
         agentProfile
       );
   
-      const messageTemplate = type === 'mention' 
-        ? farcasterMessageTemplate 
-        : farcasterReplyMessageTemplate;
-  
-      const parsedResponse = await this.responseService.generateResponseWithRetries(state2, type, messageTemplate);
-      
+      const parsedResponse = await this.responseService.generateResponseWithRetries(state2, type);
       if (!parsedResponse) return;
   
-      // ... resto del código de manejo de respuesta ...
+      const responseMemory: Memory = {
+        id: stringToUuid(parsedResponse.text),
+        userId: this.runtime.agentId,
+        agentId: this.runtime.agentId,
+        roomId: memory.roomId,
+        content: {
+          text: parsedResponse.text,
+          action: parsedResponse.action,
+        },
+        createdAt: Date.now(),
+      };
+  
+      const responseCallback = await this.responseService.createResponseCallback(
+        this.hasRespondedInAction,
+        async (text: string, hash?: string) => await this.replyToCast(text, hash || payload.data.hash)
+      );
+  
+      await this.runtime.processActions(memory, [responseMemory], state2, responseCallback);
+  
+      if (this.hasRespondedInAction.has(payload.data.hash)) {
+        elizaLogger.log("Ya se respondió en una acción, omitiendo respuesta adicional");
+      } else {
+        this.cleanupActionResponses();
+        await responseCallback(parsedResponse, undefined, false);
+        elizaLogger.success("Respuesta publicada exitosamente");
+      }
   
     } catch (error) {
       elizaLogger.error(`Error en handle${type}:`, error);
       throw error;
     }
-  }
+  } 
 
   private async handleMention(payload: WebhookPayload) {
     return this.handleInteraction(payload, 'mention');
