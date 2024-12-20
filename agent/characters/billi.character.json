@@ -1,6 +1,6 @@
 {
   "name": "Billi",
-  "clients": ["farcaster"],
+  "clients": ["twitter"],
   "modelProvider": "openai",
   "settings": {
     "voice": {

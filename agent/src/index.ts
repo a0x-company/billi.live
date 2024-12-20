@@ -33,7 +33,7 @@ import type { DirectClient } from "@ai16z/client-direct";
 import timeProvider from "./providers/timeProvider.ts";
 import evmPlugin from "./plugin-evm/src/index.ts";
 import { livestreamGeneration } from "./custom_actions/livestream/action.ts";
-import NeynarClientInterface from "./clients/neynar-client.ts";
+import NeynarClientInterface from "./clients/farcaster/client.ts";
 import { createNodePlugin } from "@ai16z/plugin-node";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
@@ -233,7 +233,9 @@ export function createAgent(
       createNodePlugin(),
     ].filter(Boolean),
     providers: [timeProvider],
-    actions: [livestreamGeneration],
+    actions: [
+      //livestreamGeneration
+    ],
     services: [],
     managers: [],
     cacheManager: cache,
