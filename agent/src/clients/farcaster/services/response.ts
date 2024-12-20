@@ -7,7 +7,7 @@ export class ResponseService {
 
   private getTemplateForType(type: 'mention' | 'reply', isResponseTemplate: boolean = true) {
     if (isResponseTemplate) {
-      // Templates para respuestas
+      // Templates for responses
       if (type === 'mention') {
         return this.runtime.character.templates?.farcasterMessageHandlerTemplate || 
                farcasterMessageTemplate;
@@ -15,7 +15,7 @@ export class ResponseService {
       return this.runtime.character.templates?.farcasterReplyMessageHandlerTemplate || 
              farcasterReplyMessageTemplate;
     } else {
-      // Templates para shouldRespond
+      // Templates for shouldRespond
       if (type === 'mention') {
         return this.runtime.character.templates?.farcasterShouldRespondTemplate || 
                farcasterShouldRespondTemplate;
@@ -35,10 +35,10 @@ export class ResponseService {
 
     while (attempts < 3 && !parsedResponse) {
       const attemptContext = attempts > 0
-        ? context + `\n\nNOTA: Intento ${attempts + 1}/3. La respuesta anterior no tenía el formato JSON correcto. Asegúrate de responder con el formato:\n\`\`\`json\n{ "user": "{{agentName}}", "text": "tu mensaje", "action": "ACCIÓN_OPCIONAL${type === 'mention' ? ' , NONE si no detectas accion' : ''}" }\n\`\`\``
+        ? context + `\n\nNOTE: Attempt ${attempts + 1}/3. Previous response didn't have the correct JSON format. Make sure to respond with the format:\n\`\`\`json\n{ "user": "{{agentName}}", "text": "your message", "action": "OPTIONAL_ACTION${type === 'mention' ? ' , NONE if no action detected' : ''}" }\n\`\`\``
         : context;
 
-      elizaLogger.log(`Intento ${attempts + 1} de generar respuesta...`);
+      elizaLogger.log(`Attempt ${attempts + 1} to generate response...`);
 
       response = await generateMessageResponse({
         runtime: this.runtime,
@@ -51,7 +51,7 @@ export class ResponseService {
     }
 
     if (!parsedResponse?.text) {
-      elizaLogger.error("No se pudo generar una respuesta válida después de 3 intentos");
+      elizaLogger.error("Could not generate a valid response after 3 attempts");
       return null;
     }
 
@@ -85,7 +85,7 @@ export class ResponseService {
           createdAt: Date.now(),
         };
 
-        elizaLogger.log("Nueva memoria creada:", {
+        elizaLogger.log("New memory created:", {
           id: memory.id,
           text: memory.content.text,
           action: memory.content.action,
@@ -111,16 +111,16 @@ export class ResponseService {
       });
 
       const decision = response?.text?.match(/\[(RESPOND|IGNORE|STOP)\]/)?.[1];
-      elizaLogger.log(`Decisión de respuesta para ${type}:`, decision);
+      elizaLogger.log(`Response decision for ${type}:`, decision);
 
       if (decision === 'STOP') {
-        elizaLogger.warn('Se recibió señal de STOP en la conversación');
+        elizaLogger.warn('STOP signal received in conversation');
         return false;
       }
 
       return decision === 'RESPOND';
     } catch (error) {
-      elizaLogger.error(`Error evaluando si responder a ${type}:`, error);
+      elizaLogger.error(`Error evaluating whether to respond to ${type}:`, error);
       return false;
     }
   }
